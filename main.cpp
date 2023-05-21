@@ -22,19 +22,31 @@ struct Date {
   }
 };
 
+class InvestmentAccout {
+  string userId;
+
+public:
+  InvestmentAccout(string userId) : userId(userId) {}
+};
+
 class User {
   string id;
+
+protected:
   string name;
   int age;
   bool isCitizen;
   string gender;
   Date *birthday;
+  InvestmentAccout *investmentAccout;
 
 public:
   User(string id, string name, int age, bool isCitizen, string gender,
        Date *birthday)
       : id(id), name(name), age(age), isCitizen(isCitizen), gender(gender),
         birthday(birthday) {}
+
+  string getId() { return this->id; }
 
   void logBasicData() {
     cout << "id: " << this->id << endl;
@@ -44,10 +56,15 @@ public:
     cout << "gender: " << this->gender << endl;
     cout << "birthday: " << this->birthday->getFormattedDate() << endl;
   }
+
+  void attachInvestmentAccount(InvestmentAccout *acc) {
+    this->investmentAccout = acc;
+  }
 };
 
 int main() {
   User *user = new User("100", "Nika", 19, true, "Male", new Date{26, 3, 2004});
   user->logBasicData();
+  user->attachInvestmentAccount(new InvestmentAccout(user->getId()));
   return 0;
 }
