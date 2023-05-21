@@ -4,6 +4,7 @@
 
 using namespace std;
 
+// utility functions
 string padLeft(string str, char padChar, int len) {
   while (str.length() < len) {
     str.insert(0, 1, padChar);
@@ -11,12 +12,18 @@ string padLeft(string str, char padChar, int len) {
   return str;
 }
 
+string prettyBool(bool boolean) { return boolean ? "true" : "false"; }
+
+enum Gender { FEMALE, MALE };
+
+string genderStr(Gender gender) {
+  return gender == Gender::MALE ? "Male" : "Female";
+}
+
 struct Stock {
   string code;
   uint price;
 };
-
-string prettyBool(bool boolean) { return boolean ? "true" : "false"; }
 
 struct Date {
   int day;
@@ -43,12 +50,12 @@ class User {
 protected:
   string name;
   bool isCitizen;
-  string gender;
+  Gender gender;
   Date *birthday;
   InvestmentAccout *investmentAccout;
 
 public:
-  User(string id, string name, int age, bool isCitizen, string gender,
+  User(string id, string name, int age, bool isCitizen, Gender gender,
        Date *birthday)
       : id(id), name(name), isCitizen(isCitizen), gender(gender),
         birthday(birthday) {}
@@ -66,7 +73,7 @@ public:
     cout << "name: " << this->name << endl;
     cout << "age: " << this->getAge() << endl;
     cout << "is a citizen: " << prettyBool(this->isCitizen) << endl;
-    cout << "gender: " << this->gender << endl;
+    cout << "gender: " << genderStr(this->gender) << endl;
     cout << "birthday: " << this->birthday->getFormattedDate() << endl;
   }
 
@@ -81,7 +88,8 @@ public:
 };
 
 int main() {
-  User *user = new User("100", "Nika", 19, true, "Male", new Date{26, 3, 2004});
+  User *user = new User("100", "Nika Qvrivishvili", 19, true, Gender::MALE,
+                        new Date{26, 3, 2004});
   user->logBasicData();
   user->attachInvestmentAccount(new InvestmentAccout(user->getId()));
   delete user;
