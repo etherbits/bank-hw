@@ -10,6 +10,8 @@ string padLeft(string str, char padChar, int len) {
   return str;
 }
 
+string prettyBool(bool boolean) { return boolean ? "true" : "false"; }
+
 struct Date {
   int day;
   int month;
@@ -52,7 +54,7 @@ public:
     cout << "id: " << this->id << endl;
     cout << "name: " << this->name << endl;
     cout << "age: " << this->age << endl;
-    cout << "is a citizen: " << this->isCitizen << endl;
+    cout << "is a citizen: " << prettyBool(this->isCitizen) << endl;
     cout << "gender: " << this->gender << endl;
     cout << "birthday: " << this->birthday->getFormattedDate() << endl;
   }
