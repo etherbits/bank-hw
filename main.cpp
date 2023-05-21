@@ -1,3 +1,4 @@
+#include <ctime>
 #include <iostream>
 #include <string>
 
@@ -9,6 +10,11 @@ string padLeft(string str, char padChar, int len) {
   }
   return str;
 }
+
+struct Stock {
+  string code;
+  uint price;
+};
 
 string prettyBool(bool boolean) { return boolean ? "true" : "false"; }
 
@@ -36,7 +42,6 @@ class User {
 
 protected:
   string name;
-  int age;
   bool isCitizen;
   string gender;
   Date *birthday;
@@ -45,15 +50,21 @@ protected:
 public:
   User(string id, string name, int age, bool isCitizen, string gender,
        Date *birthday)
-      : id(id), name(name), age(age), isCitizen(isCitizen), gender(gender),
+      : id(id), name(name), isCitizen(isCitizen), gender(gender),
         birthday(birthday) {}
 
   string getId() { return this->id; }
 
+  int getAge() {
+    time_t t = time(nullptr);
+    tm *const pTInfo = localtime(&t);
+    return 1900 + pTInfo->tm_year - this->birthday->year;
+  }
+
   void logBasicData() {
     cout << "id: " << this->id << endl;
     cout << "name: " << this->name << endl;
-    cout << "age: " << this->age << endl;
+    cout << "age: " << this->getAge() << endl;
     cout << "is a citizen: " << prettyBool(this->isCitizen) << endl;
     cout << "gender: " << this->gender << endl;
     cout << "birthday: " << this->birthday->getFormattedDate() << endl;
