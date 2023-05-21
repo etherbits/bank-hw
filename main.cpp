@@ -27,6 +27,7 @@ class InvestmentAccout {
 
 public:
   InvestmentAccout(string userId) : userId(userId) {}
+  void log() { cout << this->userId << endl; }
 };
 
 class User {
@@ -60,11 +61,18 @@ public:
   void attachInvestmentAccount(InvestmentAccout *acc) {
     this->investmentAccout = acc;
   }
+
+  ~User() {
+    delete birthday;
+    delete investmentAccout;
+  }
 };
 
 int main() {
   User *user = new User("100", "Nika", 19, true, "Male", new Date{26, 3, 2004});
   user->logBasicData();
   user->attachInvestmentAccount(new InvestmentAccout(user->getId()));
+  delete user;
+
   return 0;
 }
