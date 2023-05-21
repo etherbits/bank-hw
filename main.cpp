@@ -3,6 +3,7 @@
 #include <iostream>
 #include <math.h>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -39,12 +40,20 @@ string getFormattedDate(tm date) {
          padLeft(to_string(date.tm_mon + 1), '0', 2) + "/" +
          to_string(date.tm_year + 1900);
 }
-// utility functions
 
 struct Stock {
   string code;
-  uint price;
+  double price;
 };
+
+void logStocks(vector<Stock> stocks) {
+  cout << endl << "=== Available Stocks ===" << endl;
+  for (int i = 0; i < stocks.size(); i++) {
+    cout << "Code: " << stocks[i].code << " || "
+         << "Price: $" << stocks[i].price << endl;
+  }
+  cout << endl;
+}
 
 class InvestmentAccout {
   string userId;
@@ -90,12 +99,33 @@ public:
   ~User() { delete investmentAccout; }
 };
 
-int main() {
-  User *user = new User("100", "Nika Qvrivishvili", 19, true, Gender::MALE,
-                        {0, 0, 0, 26, 2, 104});
-  user->logBasicData();
-  user->attachInvestmentAccount(new InvestmentAccout(user->getId()));
-  delete user;
+void logUsers(vector<User *> users) {
+  cout << endl << "=== All Customers ===" << endl;
+  for (int i = 0; i < users.size(); i++) {
+    cout << "---" << endl;
+    users[i]->logBasicData();
+  }
+  cout << endl;
+}
 
+int main() {
+  vector<Stock> stocks = {{"AMZN", 100.4}, {"NFLX", 56.5}};
+  vector<User *> users = {};
+
+  User *user1 = new User("100", "Nika Qvrivishvili", 19, true, Gender::MALE,
+                         {0, 0, 0, 26, 2, 104});
+
+  User *user2 =
+      new User("123", "John Doe", 19, true, Gender::MALE, {0, 0, 0, 7, 9, 99});
+
+  users.push_back(user1);
+  users.push_back(user2);
+
+  user1->attachInvestmentAccount(new InvestmentAccout(user1->getId()));
+
+  logStocks(stocks);
+  logUsers(users);
+
+  delete user1;
   return 0;
 }
