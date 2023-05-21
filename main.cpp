@@ -17,8 +17,7 @@ struct Date {
 
   string getFormattedDate() {
     return padLeft(to_string(day), '0', 2) + "/" +
-           padLeft(to_string(month), '0', 2) + "/" +
-           padLeft(to_string(year), '0', 2);
+           padLeft(to_string(month), '0', 2) + "/" + to_string(year);
   }
 };
 
