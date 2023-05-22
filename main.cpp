@@ -55,6 +55,12 @@ struct OwnedStock : public Stock {
   double amount;
 };
 
+// stock listings
+map<string, StockListing> stocks = {
+    {"AMZN", {"Amazon.com Inc.", "AMZN", 114.8}},
+    {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
+    {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
+
 void logStocks(map<string, StockListing> stocks) {
   cout << endl << "=== Available Stocks ===" << endl;
 
@@ -74,23 +80,21 @@ class InvestmentAccout {
 public:
   InvestmentAccout(string userId) : userId(userId) {}
 
-  void buyStock(string code, double payment,
-                map<string, StockListing> availableStocks) {
+  void buyStock(string code, double payment) {
     // check if stock exists
-    if (availableStocks.find(code) == availableStocks.end()) {
+    if (stocks.find(code) == stocks.end()) {
       return;
     }
 
     // check if user owns stock
     if (ownedStocks.find(code) == ownedStocks.end()) {
-      this->ownedStocks[code] = {availableStocks[code].company,
-                                 availableStocks[code].code,
-                                 payment / availableStocks[code].price};
+      this->ownedStocks[code] = {stocks[code].company, stocks[code].code,
+                                 payment / stocks[code].price};
 
       return;
     }
 
-    this->ownedStocks[code].amount += payment / availableStocks[code].price;
+    this->ownedStocks[code].amount += payment / stocks[code].price;
 
     cout << code << this->ownedStocks[code].amount << endl;
   }
@@ -103,7 +107,9 @@ public:
          it != ownedStocks.end(); ++it) {
       cout << "Company: " << it->second.company << " || "
            << "Code: " << it->second.code << " || "
-           << "Amount: " << it->second.amount << endl;
+           << "Shares: " << it->second.amount << " || "
+           << "Total: "
+           << "$" << it->second.amount * stocks[it->second.code].price << endl;
     }
     cout << endl;
   }
@@ -136,6 +142,7 @@ public:
     cout << "gender: " << genderStr(this->gender) << endl;
     cout << "birthday: " << getFormattedDate(this->birthday) << endl;
     if (this->investmentAccout != nullptr) {
+      cout << endl << "= Investment Account =" << endl;
       this->investmentAccout->logStocks();
     }
   }
@@ -144,9 +151,8 @@ public:
     this->investmentAccout = new InvestmentAccout(this->id);
   }
 
-  void buyStock(string code, double payment,
-                map<string, StockListing> availableStocks) {
-    this->investmentAccout->buyStock(code, payment, availableStocks);
+  void buyStock(string code, double payment) {
+    this->investmentAccout->buyStock(code, payment);
   }
 
   ~User() { delete investmentAccout; }
@@ -162,12 +168,6 @@ void logUsers(vector<User> &users) {
 }
 
 int main() {
-  // stock listings
-  map<string, StockListing> stocks = {
-      {"AMZN", {"Amazon.com Inc.", "AMZN", 114.8}},
-      {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
-      {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
-
   // users
   vector<User> users = {};
 
@@ -182,10 +182,10 @@ int main() {
 
   users[0].createInvestmentAccount();
 
-  users[0].buyStock("AMZN", 100, stocks);
-  users[0].buyStock("AMZN", 200, stocks);
+  users[0].buyStock("AMZN", 112.2);
+  users[0].buyStock("AMZN", 313.2);
 
-  users[0].buyStock("NFLX", 200, stocks);
+  users[0].buyStock("NFLX", 2012.16);
 
   logStocks(stocks);
   logUsers(users);
