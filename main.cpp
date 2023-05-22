@@ -73,6 +73,67 @@ void logStocks(map<string, StockListing> stocks) {
   cout << endl;
 }
 
+class CheckingAccount {
+  double balance;
+
+public:
+  CheckingAccount() : balance(0) {}
+
+  void deposit(double amount) { balance += amount; }
+
+  void withdraw(double amount) {
+    if (amount > this->balance) {
+      cout << "ERROR: The withdrawal requested was larger than your current "
+              "balance!"
+           << endl;
+
+      return;
+    }
+
+    balance -= amount;
+  }
+
+  double getBalance() { return this->balance; }
+
+  void logData() { cout << "Balance: $" << this->balance << endl; }
+};
+
+class DepositAccount {
+  string userId;
+  CheckingAccount *checkingAccount;
+
+public:
+  DepositAccount(string userId) : userId(userId), checkingAccount(nullptr) {}
+
+  void deposit(double amount) {
+    if (this->checkingAccount == nullptr) {
+      return;
+    }
+
+    this->checkingAccount->deposit(amount);
+  }
+
+  void withdraw(double amount) {
+    if (this->checkingAccount == nullptr) {
+      return;
+    }
+
+    this->checkingAccount->withdraw(amount);
+  }
+
+  double getCheckingBalance() { return this->checkingAccount->getBalance(); }
+
+  void createCheckingAccount() {
+    this->checkingAccount = new CheckingAccount();
+  }
+
+  void logData() {
+    if (checkingAccount != nullptr) {
+      checkingAccount->logData();
+    }
+  }
+};
+
 class InvestmentAccout {
   string userId;
   map<string, OwnedStock> ownedStocks;
@@ -80,10 +141,10 @@ class InvestmentAccout {
 public:
   InvestmentAccout(string userId) : userId(userId) {}
 
-  void buyStock(string code, double payment) {
+  int buyStock(string code, double payment) {
     // check if stock exists
     if (stocks.find(code) == stocks.end()) {
-      return;
+      return 1;
     }
 
     // check if user owns stock
@@ -91,12 +152,11 @@ public:
       this->ownedStocks[code] = {stocks[code].company, stocks[code].code,
                                  payment / stocks[code].price};
 
-      return;
+      return 1;
     }
 
     this->ownedStocks[code].amount += payment / stocks[code].price;
-
-    cout << code << this->ownedStocks[code].amount << endl;
+    return 0;
   }
 
   void logStocks() {
@@ -125,12 +185,14 @@ protected:
   bool isCitizen;
   Gender gender;
   tm birthday;
+  DepositAccount *depositAccount;
   InvestmentAccout *investmentAccout;
 
 public:
   User(string id, string name, bool isCitizen, Gender gender, tm birthday)
       : id(id), name(name), isCitizen(isCitizen), gender(gender),
-        birthday(birthday), investmentAccout(nullptr) {}
+        birthday(birthday), depositAccount(nullptr), investmentAccout(nullptr) {
+  }
 
   int getAge() { return getYearDiff(this->birthday); }
 
@@ -141,6 +203,12 @@ public:
     cout << "is a citizen: " << prettyBool(this->isCitizen) << endl;
     cout << "gender: " << genderStr(this->gender) << endl;
     cout << "birthday: " << getFormattedDate(this->birthday) << endl;
+
+    if (this->depositAccount != nullptr) {
+      cout << endl << "= Deposit Account =" << endl;
+      this->depositAccount->logData();
+    }
+
     if (this->investmentAccout != nullptr) {
       cout << endl << "= Investment Account =" << endl;
       this->investmentAccout->logStocks();
@@ -151,8 +219,27 @@ public:
     this->investmentAccout = new InvestmentAccout(this->id);
   }
 
+  void createDepositAccount() {
+    this->depositAccount = new DepositAccount(this->id);
+  }
+
+  void createCheckingAccount() {
+    this->depositAccount->createCheckingAccount();
+  }
+
+  void deposit(double amount) { this->depositAccount->deposit(amount); }
+  void withdraw(double amount) { this->depositAccount->withdraw(amount); }
+
   void buyStock(string code, double payment) {
-    this->investmentAccout->buyStock(code, payment);
+    if (payment > this->depositAccount->getCheckingBalance()) {
+      cout << "ERROR: You don not have the sufficient funds for this request"
+           << endl;
+      return;
+    }
+
+    if (this->investmentAccout->buyStock(code, payment)) {
+      withdraw(payment);
+    }
   }
 
   ~User() { delete investmentAccout; }
@@ -181,11 +268,17 @@ int main() {
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
   users[0].createInvestmentAccount();
+  users[0].createDepositAccount();
+  users[0].createCheckingAccount();
+
+  users[0].deposit(1000);
+  users[0].withdraw(240);
 
   users[0].buyStock("AMZN", 112.2);
   users[0].buyStock("AMZN", 313.2);
 
   users[0].buyStock("NFLX", 2012.16);
+  users[0].buyStock("NVDA", 647.3);
 
   logStocks(stocks);
   logUsers(users);
