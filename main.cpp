@@ -98,14 +98,48 @@ public:
   void logData() { cout << "Balance: $" << this->balance << endl; }
 };
 
+class SavingsAccount {
+  double balance;
+  double interest;
+
+public:
+  SavingsAccount() : balance(0), interest(0) {}
+
+  void deposit(double amount) { balance += amount; }
+
+  void withdraw(double amount) {
+    if (amount > this->balance) {
+      cout << "ERROR: The withdrawal requested was larger than your current "
+              "balance!"
+           << endl;
+
+      return;
+    }
+
+    balance -= amount;
+  }
+
+  void setInterest(double interest) { this->interest = interest; }
+
+  void addInterest() { this->balance *= 1 + this->interest; };
+
+  double getBalance() { return this->balance; }
+
+  void logData() {
+    cout << "Balance: $" << this->getBalance() << " || "
+         << "Interest (%): " << this->interest << endl;
+  }
+};
+
 class DepositAccount {
   string userId;
   CheckingAccount *checkingAccount;
+  SavingsAccount *savingsAccount;
 
 public:
   DepositAccount(string userId) : userId(userId), checkingAccount(nullptr) {}
 
-  void deposit(double amount) {
+  void checkingDeposit(double amount) {
     if (this->checkingAccount == nullptr) {
       return;
     }
@@ -113,7 +147,7 @@ public:
     this->checkingAccount->deposit(amount);
   }
 
-  void withdraw(double amount) {
+  void checkingWithdraw(double amount) {
     if (this->checkingAccount == nullptr) {
       return;
     }
@@ -127,9 +161,35 @@ public:
     this->checkingAccount = new CheckingAccount();
   }
 
+  void savingsDeposit(double amount) {
+    if (this->savingsAccount == nullptr) {
+      return;
+    }
+
+    this->savingsAccount->deposit(amount);
+  }
+
+  void savingsWithdraw(double amount) {
+    if (this->savingsAccount == nullptr) {
+      return;
+    }
+
+    this->savingsAccount->withdraw(amount);
+  }
+
+  double getSavingsBalance() { return this->savingsAccount->getBalance(); }
+
+  void createSavingsAccount() { this->savingsAccount = new SavingsAccount(); }
+
   void logData() {
     if (checkingAccount != nullptr) {
+      cout << "= Checking Account =" << endl;
       checkingAccount->logData();
+    }
+
+    if (savingsAccount != nullptr) {
+      cout << "= Savings Account =" << endl;
+      savingsAccount->logData();
     }
   }
 };
@@ -227,8 +287,22 @@ public:
     this->depositAccount->createCheckingAccount();
   }
 
-  void deposit(double amount) { this->depositAccount->deposit(amount); }
-  void withdraw(double amount) { this->depositAccount->withdraw(amount); }
+  void createSavingsAccount(){
+    this->depositAccount->createSavingsAccount();
+  }
+
+  void checkingDeposit(double amount) {
+    this->depositAccount->checkingDeposit(amount);
+  }
+  void checkingWithdraw(double amount) {
+    this->depositAccount->checkingWithdraw(amount);
+  }
+  void savingsDeposit(double amount) {
+    this->depositAccount->savingsDeposit(amount);
+  }
+  void savingsWithdraw(double amount) {
+    this->depositAccount->savingsWithdraw(amount);
+  }
 
   void buyStock(string code, double payment) {
     if (payment > this->depositAccount->getCheckingBalance()) {
@@ -238,7 +312,7 @@ public:
     }
 
     if (this->investmentAccout->buyStock(code, payment)) {
-      withdraw(payment);
+      checkingWithdraw(payment);
     }
   }
 
@@ -270,15 +344,19 @@ int main() {
   users[0].createInvestmentAccount();
   users[0].createDepositAccount();
   users[0].createCheckingAccount();
+  users[0].createSavingsAccount();
 
-  users[0].deposit(1000);
-  users[0].withdraw(240);
+  users[0].checkingDeposit(1000);
+  users[0].checkingWithdraw(240);
+
+  users[0].savingsDeposit(1000);
+  users[0].savingsWithdraw(200);
 
   users[0].buyStock("AMZN", 112.2);
   users[0].buyStock("AMZN", 313.2);
 
   users[0].buyStock("NFLX", 2012.16);
-  users[0].buyStock("NVDA", 647.3);
+  users[0].buyStock("NVDA", 647.16);
 
   logStocks(stocks);
   logUsers(users);
