@@ -1,6 +1,7 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <map>
 #include <math.h>
 #include <string>
 #include <vector>
@@ -42,15 +43,19 @@ string getFormattedDate(tm date) {
 }
 
 struct Stock {
+  string company;
   string code;
   double price;
 };
 
-void logStocks(vector<Stock> stocks) {
+void logStocks(map<string, Stock> stocks) {
   cout << endl << "=== Available Stocks ===" << endl;
-  for (int i = 0; i < stocks.size(); i++) {
-    cout << "Code: " << stocks[i].code << " || "
-         << "Price: $" << stocks[i].price << endl;
+
+  for (std::map<string, Stock>::iterator it = stocks.begin();
+       it != stocks.end(); ++it) {
+    cout << "Company: " << it->second.company << " || "
+         << "Code: " << it->second.code << " || "
+         << "Price: $" << it->second.price << endl;
   }
   cout << endl;
 }
@@ -109,14 +114,16 @@ void logUsers(vector<User *> users) {
 }
 
 int main() {
-  vector<Stock> stocks = {{"AMZN", 100.4}, {"NFLX", 56.5}};
+  map<string, Stock> stocks = {{"AMZN", {"Amazon.com Inc.", "AMZN", 114.8}},
+                               {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
+                               {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
   vector<User *> users = {};
 
   User *user1 = new User("100", "Nika Qvrivishvili", 19, true, Gender::MALE,
                          {0, 0, 0, 26, 2, 104});
 
   User *user2 =
-      new User("123", "John Doe", 19, true, Gender::MALE, {0, 0, 0, 7, 9, 99});
+      new User("123", "John Doe", 19, true, Gender::MALE, {0, 0, 0, 22, 4, 99});
 
   users.push_back(user1);
   users.push_back(user2);
