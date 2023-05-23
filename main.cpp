@@ -73,6 +73,7 @@ void logStocks(map<string, StockListing> stocks) {
 }
 
 class CheckingAccount {
+protected:
   double balance;
 
 public:
@@ -97,32 +98,16 @@ public:
   void logData() { cout << "Balance: $" << this->balance << endl; }
 };
 
-class SavingsAccount {
-  double balance;
+class SavingsAccount : public CheckingAccount {
+protected:
   double interest;
 
 public:
-  SavingsAccount() : balance(0), interest(0) {}
-
-  void deposit(double amount) { balance += amount; }
-
-  void withdraw(double amount) {
-    if (amount > this->balance) {
-      cout << "ERROR: The withdrawal requested was larger than your current "
-              "balance!"
-           << endl;
-
-      return;
-    }
-
-    balance -= amount;
-  }
+  SavingsAccount() : interest(0) {}
 
   void setInterest(double interest) { this->interest = interest; }
 
   void addInterest() { this->balance *= 1 + this->interest; };
-
-  double getBalance() { return this->balance; }
 
   void logData() {
     cout << "Balance: $" << this->getBalance()
@@ -130,22 +115,62 @@ public:
   }
 };
 
+class CDAccount : public SavingsAccount {
+  bool isBlocked;
+
+public:
+  CDAccount() : isBlocked(false) {}
+
+  void blockBalance() { isBlocked = true; }
+
+  void unblock() { isBlocked = false; }
+
+  void withdraw(double amount) {
+    if (this->isBlocked) {
+      cout << "ERROR: Can't withdraw because your balance is blocked" << endl;
+      return;
+    }
+
+    SavingsAccount::withdraw(amount);
+  }
+
+  void logData() {
+    cout << "Balance: $" << this->getBalance()
+         << " || Interest: " << this->interest
+         << "% || isBlocked: " << prettyBool(this->isBlocked) << endl;
+  }
+};
+
 class DepositAccount {
   string userId;
   CheckingAccount *checkingAccount;
   SavingsAccount *savingsAccount;
+  CDAccount *cdAccount;
 
 public:
   DepositAccount(string userId) : userId(userId), checkingAccount(nullptr) {}
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
   SavingsAccount *getSavingsAccount() { return this->savingsAccount; }
+  CDAccount *getCDAccount() { return this->cdAccount; }
 
   void createCheckingAccount() {
+    if (this->checkingAccount != nullptr) {
+      return;
+    }
+
     this->checkingAccount = new CheckingAccount();
   }
 
-  void createSavingsAccount() { this->savingsAccount = new SavingsAccount(); }
+  void createSavingsAccount() {
+    if (this->savingsAccount != nullptr) {
+      return;
+    }
+
+    this->savingsAccount = new SavingsAccount();
+  }
+
+  void createCDAccount() { this->cdAccount = new CDAccount(); }
 
   void logData() {
     if (checkingAccount != nullptr) {
@@ -156,6 +181,11 @@ public:
     if (savingsAccount != nullptr) {
       cout << "= Savings Account =" << endl;
       savingsAccount->logData();
+    }
+
+    if (cdAccount != nullptr) {
+      cout << "= CD Account =" << endl;
+      cdAccount->logData();
     }
   }
 };
@@ -249,12 +279,6 @@ public:
     this->depositAccount = new DepositAccount(this->id);
   }
 
-  void createCheckingAccount() {
-    this->depositAccount->createCheckingAccount();
-  }
-
-  void createSavingsAccount() { this->depositAccount->createSavingsAccount(); }
-
   DepositAccount *getDepositAccount() { return this->depositAccount; }
 
   void buyStock(string code, double payment) {
@@ -301,14 +325,18 @@ int main() {
 
   firstUser.createInvestmentAccount();
   firstUser.createDepositAccount();
-  firstUser.createCheckingAccount();
-  firstUser.createSavingsAccount();
 
   DepositAccount *firstUserDepositAccount = firstUser.getDepositAccount();
+
+  firstUserDepositAccount->createCheckingAccount();
+  firstUserDepositAccount->createSavingsAccount();
+  firstUserDepositAccount->createCDAccount();
+
   CheckingAccount *firstUserCheckingAccount =
       firstUserDepositAccount->getCheckingAccount();
   SavingsAccount *firstUserSavingsAccount =
       firstUserDepositAccount->getSavingsAccount();
+  CDAccount *firstUserCDAccount = firstUserDepositAccount->getCDAccount();
 
   firstUserCheckingAccount->deposit(1000);
   firstUserCheckingAccount->withdraw(240);
@@ -317,6 +345,11 @@ int main() {
   firstUserSavingsAccount->setInterest(0.01);
   firstUserSavingsAccount->addInterest();
   firstUserSavingsAccount->withdraw(5);
+
+  firstUserCDAccount->deposit(20000);
+  firstUserCDAccount->setInterest(0.15);
+  firstUserCDAccount->blockBalance();
+  firstUserCDAccount->addInterest();
 
   firstUser.buyStock("AMZN", 112.2);
   firstUser.buyStock("AMZN", 313.2);
