@@ -1,4 +1,3 @@
-#include <chrono>
 #include <ctime>
 #include <iostream>
 #include <map>
@@ -126,8 +125,8 @@ public:
   double getBalance() { return this->balance; }
 
   void logData() {
-    cout << "Balance: $" << this->getBalance() << " || "
-         << "Interest (%): " << this->interest << endl;
+    cout << "Balance: $" << this->getBalance()
+         << " || Interest: " << this->interest << "%" << endl;
   }
 };
 
@@ -139,45 +138,12 @@ class DepositAccount {
 public:
   DepositAccount(string userId) : userId(userId), checkingAccount(nullptr) {}
 
-  void checkingDeposit(double amount) {
-    if (this->checkingAccount == nullptr) {
-      return;
-    }
-
-    this->checkingAccount->deposit(amount);
-  }
-
-  void checkingWithdraw(double amount) {
-    if (this->checkingAccount == nullptr) {
-      return;
-    }
-
-    this->checkingAccount->withdraw(amount);
-  }
-
-  double getCheckingBalance() { return this->checkingAccount->getBalance(); }
+  CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
+  SavingsAccount *getSavingsAccount() { return this->savingsAccount; }
 
   void createCheckingAccount() {
     this->checkingAccount = new CheckingAccount();
   }
-
-  void savingsDeposit(double amount) {
-    if (this->savingsAccount == nullptr) {
-      return;
-    }
-
-    this->savingsAccount->deposit(amount);
-  }
-
-  void savingsWithdraw(double amount) {
-    if (this->savingsAccount == nullptr) {
-      return;
-    }
-
-    this->savingsAccount->withdraw(amount);
-  }
-
-  double getSavingsBalance() { return this->savingsAccount->getBalance(); }
 
   void createSavingsAccount() { this->savingsAccount = new SavingsAccount(); }
 
@@ -287,32 +253,22 @@ public:
     this->depositAccount->createCheckingAccount();
   }
 
-  void createSavingsAccount(){
-    this->depositAccount->createSavingsAccount();
-  }
+  void createSavingsAccount() { this->depositAccount->createSavingsAccount(); }
 
-  void checkingDeposit(double amount) {
-    this->depositAccount->checkingDeposit(amount);
-  }
-  void checkingWithdraw(double amount) {
-    this->depositAccount->checkingWithdraw(amount);
-  }
-  void savingsDeposit(double amount) {
-    this->depositAccount->savingsDeposit(amount);
-  }
-  void savingsWithdraw(double amount) {
-    this->depositAccount->savingsWithdraw(amount);
-  }
+  DepositAccount *getDepositAccount() { return this->depositAccount; }
 
   void buyStock(string code, double payment) {
-    if (payment > this->depositAccount->getCheckingBalance()) {
+    CheckingAccount *checkingAccount =
+        this->depositAccount->getCheckingAccount();
+
+    if (payment > checkingAccount->getBalance()) {
       cout << "ERROR: You don not have the sufficient funds for this request"
            << endl;
       return;
     }
 
     if (this->investmentAccout->buyStock(code, payment)) {
-      checkingWithdraw(payment);
+      checkingAccount->withdraw(payment);
     }
   }
 
@@ -341,22 +297,31 @@ int main() {
   users.push_back(
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
-  users[0].createInvestmentAccount();
-  users[0].createDepositAccount();
-  users[0].createCheckingAccount();
-  users[0].createSavingsAccount();
+  User &firstUser = users[0];
 
-  users[0].checkingDeposit(1000);
-  users[0].checkingWithdraw(240);
+  firstUser.createInvestmentAccount();
+  firstUser.createDepositAccount();
+  firstUser.createCheckingAccount();
+  firstUser.createSavingsAccount();
 
-  users[0].savingsDeposit(1000);
-  users[0].savingsWithdraw(200);
+  DepositAccount *firstUserDepositAccount = firstUser.getDepositAccount();
+  CheckingAccount *firstUserCheckingAccount =
+      firstUserDepositAccount->getCheckingAccount();
+  SavingsAccount *firstUserSavingsAccount =
+      firstUserDepositAccount->getSavingsAccount();
 
-  users[0].buyStock("AMZN", 112.2);
-  users[0].buyStock("AMZN", 313.2);
+  firstUserCheckingAccount->deposit(1000);
+  firstUserCheckingAccount->withdraw(240);
 
-  users[0].buyStock("NFLX", 2012.16);
-  users[0].buyStock("NVDA", 647.16);
+  firstUserSavingsAccount->deposit(1041);
+  firstUserSavingsAccount->setInterest(0.01);
+  firstUserSavingsAccount->addInterest();
+  firstUserSavingsAccount->withdraw(5);
+
+  firstUser.buyStock("AMZN", 112.2);
+  firstUser.buyStock("AMZN", 313.2);
+  firstUser.buyStock("NFLX", 2012.16);
+  firstUser.buyStock("NVDA", 647.16);
 
   logStocks(stocks);
   logUsers(users);
