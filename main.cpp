@@ -350,6 +350,7 @@ int main() {
   firstUserCDAccount->setInterest(0.15);
   firstUserCDAccount->blockBalance();
   firstUserCDAccount->addInterest();
+  firstUserCDAccount->withdraw(100);
 
   firstUser.buyStock("AMZN", 112.2);
   firstUser.buyStock("AMZN", 313.2);
