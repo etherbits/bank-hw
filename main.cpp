@@ -205,7 +205,7 @@ public:
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
   SavingsAccount *getSavingsAccount() { return this->savingsAccount; }
-  vector<CDAccount *>& getCDAccounts() { return this->cdAccounts; }
+  vector<CDAccount *> &getCDAccounts() { return this->cdAccounts; }
 
   void createCheckingAccount() {
     if (this->checkingAccount != nullptr) {
@@ -228,7 +228,8 @@ public:
 
   void createCDAccount() {
     addLog(historyLogs, "Creating CD Account");
-    this->cdAccounts.push_back(new CDAccount(name + "_CD_" + to_string(cdAccounts.size()), historyLogs));
+    this->cdAccounts.push_back(new CDAccount(
+        name + "_CD_" + to_string(cdAccounts.size()), historyLogs));
   }
 
   void logData() {
@@ -264,7 +265,7 @@ public:
       return 1;
     }
 
-    // check if user owns stock
+    // check if customer owns stock
     if (ownedStocks.find(code) == ownedStocks.end()) {
       this->ownedStocks[code] = {stocks[code].company, stocks[code].code,
                                  payment / stocks[code].price};
@@ -295,7 +296,7 @@ public:
   }
 };
 
-class User {
+class Customer {
   string id;
   string name;
   bool isCitizen;
@@ -306,7 +307,7 @@ class User {
   InvestmentAccount *investmentAccout;
 
 public:
-  User(string id, string name, bool isCitizen, Gender gender, tm birthday)
+  Customer(string id, string name, bool isCitizen, Gender gender, tm birthday)
       : id(id), name(name), isCitizen(isCitizen), gender(gender),
         birthday(birthday), historyLogs({}), depositAccount(nullptr),
         investmentAccout(nullptr) {}
@@ -346,6 +347,11 @@ public:
     addLog(historyLogs, "Creating Deposit Account");
     this->depositAccount =
         new DepositAccount(name + "\'s deposit", historyLogs);
+  }
+
+  void createJointAccount() {
+    this->createInvestmentAccount();
+    this->createDepositAccount();
   }
 
   DepositAccount *getDepositAccount() { return this->depositAccount; }
@@ -396,78 +402,90 @@ public:
            "Failed to buy stock " + code + ": invalid stock specified");
   }
 
-  ~User() { delete investmentAccout; }
+  ~Customer() { delete investmentAccout; }
 };
 
-void logUsers(vector<User> &users) {
+void logCustomers(vector<Customer> &customers) {
   cout << endl << "=== All Customers ===" << endl;
-  for (int i = 0; i < users.size(); i++) {
+  for (int i = 0; i < customers.size(); i++) {
     cout << "---" << endl;
-    users[i].logBasicData();
+    customers[i].logBasicData();
   }
   cout << endl;
 }
 
 int main() {
-  vector<User> users = {};
+  // adding customer accounts to a "mock database"
+  vector<Customer> customers = {};
 
-  users.push_back({"01010101010",
-                   "Nika Qvrivishvili",
-                   true,
-                   Gender::MALE,
-                   {0, 0, 0, 26, 2, 104}});
+  customers.push_back({"01010101010",
+                       "Nika Qvrivishvili",
+                       true,
+                       Gender::MALE,
+                       {0, 0, 0, 26, 2, 104}});
 
-  users.push_back(
+  customers.push_back(
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
-  User &firstUser = users[0];
+  // creating a joint customer account
+  Customer &jointCustomer = customers[0];
 
-  firstUser.createInvestmentAccount();
-  firstUser.createDepositAccount();
+  jointCustomer.createJointAccount();
 
-  DepositAccount *firstUserDepositAccount = firstUser.getDepositAccount();
+  // getting the deposit account of this customer
+  DepositAccount *jointCustomerDepositAccount =
+      jointCustomer.getDepositAccount();
 
-  firstUserDepositAccount->createCheckingAccount();
-  firstUserDepositAccount->createSavingsAccount();
+  // creating one checking, one savings and two CD accounts for the customer
+  jointCustomerDepositAccount->createCheckingAccount();
+  jointCustomerDepositAccount->createSavingsAccount();
 
-  firstUserDepositAccount->createCDAccount();
-  firstUserDepositAccount->createCDAccount();
+  jointCustomerDepositAccount->createCDAccount();
+  jointCustomerDepositAccount->createCDAccount();
 
-  CheckingAccount *firstUserCheckingAccount =
-      firstUserDepositAccount->getCheckingAccount();
-  SavingsAccount *firstUserSavingsAccount =
-      firstUserDepositAccount->getSavingsAccount();
-  vector<CDAccount*>  firstUserCDAccounts = firstUserDepositAccount->getCDAccounts();
+  // getting all deposit accounts
+  CheckingAccount *jointCustomerCheckingAccount =
+      jointCustomerDepositAccount->getCheckingAccount();
+  SavingsAccount *jointCustomerSavingsAccount =
+      jointCustomerDepositAccount->getSavingsAccount();
+  vector<CDAccount *> jointCustomerCDAccounts =
+      jointCustomerDepositAccount->getCDAccounts();
 
-  firstUserCheckingAccount->deposit(1000);
-  firstUserCheckingAccount->withdraw(220);
-  firstUserCheckingAccount->withdraw(900);
+  // using checking account
+  jointCustomerCheckingAccount->deposit(1000);
+  jointCustomerCheckingAccount->withdraw(220);
+  jointCustomerCheckingAccount->withdraw(900);
 
-  firstUserSavingsAccount->deposit(1041);
-  firstUserSavingsAccount->setInterest(0.01);
-  firstUserSavingsAccount->addInterest();
-  firstUserSavingsAccount->withdraw(280);
+  // using savings account
+  jointCustomerSavingsAccount->deposit(1041);
+  jointCustomerSavingsAccount->setInterest(0.01);
+  jointCustomerSavingsAccount->addInterest();
+  jointCustomerSavingsAccount->withdraw(280);
 
-  firstUserCDAccounts[0]->deposit(20000);
-  firstUserCDAccounts[0]->setInterest(0.15);
-  firstUserCDAccounts[0]->blockBalance();
-  firstUserCDAccounts[0]->addInterest();
-  firstUserCDAccounts[0]->withdraw(100);
+  // using the first cd account
+  jointCustomerCDAccounts[0]->deposit(20000);
+  jointCustomerCDAccounts[0]->setInterest(0.15);
+  jointCustomerCDAccounts[0]->blockBalance();
+  jointCustomerCDAccounts[0]->addInterest();
+  jointCustomerCDAccounts[0]->withdraw(100);
 
-  firstUserCDAccounts[1]->deposit(10000);
-  firstUserCDAccounts[1]->setInterest(0.20);
-  firstUserCDAccounts[1]->blockBalance();
-  firstUserCDAccounts[1]->addInterest();
-  firstUserCDAccounts[1]->deposit(1000);
-  firstUserCDAccounts[1]->withdraw(150);
-  
-  firstUser.buyStock("AMZN", 112.2);
-  firstUser.buyStock("AMZN", 313.2);
-  firstUser.buyStock("NFLX", 1000.16);
-  firstUser.buyStock("NVDA", 334.6);
+  // using the second cd account
+  jointCustomerCDAccounts[1]->deposit(10000);
+  jointCustomerCDAccounts[1]->setInterest(0.20);
+  jointCustomerCDAccounts[1]->blockBalance();
+  jointCustomerCDAccounts[1]->addInterest();
+  jointCustomerCDAccounts[1]->deposit(1000);
+  jointCustomerCDAccounts[1]->withdraw(150);
 
+  //
+  jointCustomer.buyStock("AMZN", 112.2);
+  jointCustomer.buyStock("AMZN", 313.2);
+  jointCustomer.buyStock("NFLX", 1000.16);
+  jointCustomer.buyStock("NVDA", 334.6);
+
+  // log every important piece of info
   logStocks(stocks);
-  logUsers(users);
+  logCustomers(customers);
 
   return 0;
 }
