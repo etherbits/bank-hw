@@ -235,20 +235,19 @@ public:
 
 class User {
   string id;
-
-protected:
   string name;
   bool isCitizen;
   Gender gender;
   tm birthday;
+  vector<string> historyLogs;
   DepositAccount *depositAccount;
   InvestmentAccout *investmentAccout;
 
 public:
   User(string id, string name, bool isCitizen, Gender gender, tm birthday)
       : id(id), name(name), isCitizen(isCitizen), gender(gender),
-        birthday(birthday), depositAccount(nullptr), investmentAccout(nullptr) {
-  }
+        birthday(birthday), historyLogs({}), depositAccount(nullptr),
+        investmentAccout(nullptr) {}
 
   int getAge() { return getYearDiff(this->birthday); }
 
@@ -269,13 +268,25 @@ public:
       cout << endl << "= Investment Account =" << endl;
       this->investmentAccout->logStocks();
     }
+
+    cout << "== History Logs ==" << endl;
+    for (int i = 0; i < this->historyLogs.size(); i++) {
+      cout << this->historyLogs[i] << endl;
+    }
+  }
+
+  void addLog(string log) {
+    this->historyLogs.push_back(to_string(this->historyLogs.size()) + ": " +
+                                log);
   }
 
   void createInvestmentAccount() {
+    this->addLog("Creating Investment Account");
     this->investmentAccout = new InvestmentAccout(this->id);
   }
 
   void createDepositAccount() {
+    this->addLog("Creating Deposit Account");
     this->depositAccount = new DepositAccount(this->id);
   }
 
@@ -309,7 +320,6 @@ void logUsers(vector<User> &users) {
 }
 
 int main() {
-  // users
   vector<User> users = {};
 
   users.push_back({"01010101010",
