@@ -163,13 +163,20 @@ public:
   CDAccount(string name, vector<string> &historyLogs)
       : isBlocked(false), SavingsAccount(name, historyLogs) {}
 
-  void blockBalance() { isBlocked = true; }
+  void blockBalance() {
+    addLog(historyLogs, "Blocking " + name + " balance");
+    isBlocked = true;
+  }
 
-  void unblock() { isBlocked = false; }
+  void unblock() {
+    addLog(historyLogs, "Blocking " + name + " balance");
+    isBlocked = false;
+  }
 
   void withdraw(double amount) {
     if (this->isBlocked) {
-      cout << "ERROR: Can't withdraw because your balance is blocked" << endl;
+      addLog(historyLogs, "Failed to withdraw from " + name +
+                              ": account balance is blocked");
       return;
     }
 
@@ -177,7 +184,8 @@ public:
   }
 
   void logData() {
-    cout << "Balance: $" << this->getBalance()
+    cout << "--- CD Account " + name << endl
+         << " Balance: $" << this->getBalance()
          << " || Interest: " << this->interest
          << "% || isBlocked: " << prettyBool(this->isBlocked) << endl;
   }
@@ -188,16 +196,16 @@ class DepositAccount {
   vector<string> &historyLogs;
   CheckingAccount *checkingAccount;
   SavingsAccount *savingsAccount;
-  CDAccount *cdAccount;
+  vector<CDAccount *> cdAccounts;
 
 public:
   DepositAccount(string name, vector<string> &historyLogs)
       : name(name), historyLogs(historyLogs), checkingAccount(nullptr),
-        savingsAccount(nullptr), cdAccount(nullptr) {}
+        savingsAccount(nullptr), cdAccounts({}) {}
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
   SavingsAccount *getSavingsAccount() { return this->savingsAccount; }
-  CDAccount *getCDAccount() { return this->cdAccount; }
+  vector<CDAccount *>& getCDAccounts() { return this->cdAccounts; }
 
   void createCheckingAccount() {
     if (this->checkingAccount != nullptr) {
@@ -220,7 +228,7 @@ public:
 
   void createCDAccount() {
     addLog(historyLogs, "Creating CD Account");
-    this->cdAccount = new CDAccount(name + "_CD", historyLogs);
+    this->cdAccounts.push_back(new CDAccount(name + "_CD_" + to_string(cdAccounts.size()), historyLogs));
   }
 
   void logData() {
@@ -234,9 +242,11 @@ public:
       savingsAccount->logData();
     }
 
-    if (cdAccount != nullptr) {
-      cout << "= CD Account =" << endl;
-      cdAccount->logData();
+    if (cdAccounts.size() > 0) {
+      cout << "= CD Accounts =" << endl;
+      for (int i = 0; i < cdAccounts.size(); i++) {
+        cdAccounts[i]->logData();
+      }
     }
   }
 };
@@ -419,29 +429,38 @@ int main() {
 
   firstUserDepositAccount->createCheckingAccount();
   firstUserDepositAccount->createSavingsAccount();
+
+  firstUserDepositAccount->createCDAccount();
   firstUserDepositAccount->createCDAccount();
 
   CheckingAccount *firstUserCheckingAccount =
       firstUserDepositAccount->getCheckingAccount();
   SavingsAccount *firstUserSavingsAccount =
       firstUserDepositAccount->getSavingsAccount();
-  CDAccount *firstUserCDAccount = firstUserDepositAccount->getCDAccount();
+  vector<CDAccount*>  firstUserCDAccounts = firstUserDepositAccount->getCDAccounts();
 
   firstUserCheckingAccount->deposit(1000);
-  firstUserCheckingAccount->withdraw(240);
+  firstUserCheckingAccount->withdraw(220);
   firstUserCheckingAccount->withdraw(900);
 
   firstUserSavingsAccount->deposit(1041);
   firstUserSavingsAccount->setInterest(0.01);
   firstUserSavingsAccount->addInterest();
-  firstUserSavingsAccount->withdraw(5);
+  firstUserSavingsAccount->withdraw(280);
 
-  firstUserCDAccount->deposit(20000);
-  firstUserCDAccount->setInterest(0.15);
-  firstUserCDAccount->blockBalance();
-  firstUserCDAccount->addInterest();
-  firstUserCDAccount->withdraw(100);
+  firstUserCDAccounts[0]->deposit(20000);
+  firstUserCDAccounts[0]->setInterest(0.15);
+  firstUserCDAccounts[0]->blockBalance();
+  firstUserCDAccounts[0]->addInterest();
+  firstUserCDAccounts[0]->withdraw(100);
 
+  firstUserCDAccounts[1]->deposit(10000);
+  firstUserCDAccounts[1]->setInterest(0.20);
+  firstUserCDAccounts[1]->blockBalance();
+  firstUserCDAccounts[1]->addInterest();
+  firstUserCDAccounts[1]->deposit(1000);
+  firstUserCDAccounts[1]->withdraw(150);
+  
   firstUser.buyStock("AMZN", 112.2);
   firstUser.buyStock("AMZN", 313.2);
   firstUser.buyStock("NFLX", 1000.16);
