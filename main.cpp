@@ -143,8 +143,8 @@ public:
   }
 
   void addInterest() {
-    addLog(historyLogs, "Adding interest to " + name + ": " +
-                            to_string(this->balance) + " => " +
+    addLog(historyLogs, "Adding interest to " + name + ": $" +
+                            to_string(this->balance) + " => $" +
                             to_string(this->balance * (1 + this->interest)));
 
     this->balance *= 1 + this->interest;
@@ -253,31 +253,49 @@ public:
 };
 
 class InvestmentAccount {
+  string name;
   vector<string> &historyLogs;
+  CheckingAccount *checkingAccount;
   map<string, OwnedStock> ownedStocks;
 
 public:
-  InvestmentAccount(vector<string> &historyLogs) : historyLogs(historyLogs) {}
+  InvestmentAccount(string name, vector<string> &historyLogs)
+      : name(name), historyLogs(historyLogs), checkingAccount(nullptr) {}
 
-  int buyStock(string code, double payment) {
+  void createCheckingAccount() {
+    this->checkingAccount =
+        new CheckingAccount(name + "_checking", historyLogs);
+  }
+
+  CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
+
+  void buyStock(string code, double payment) {
     // check if stock exists
     if (stocks.find(code) == stocks.end()) {
-      return 1;
+      addLog(historyLogs,
+             "Failed to buy stock " + code + ": invalid stock specified");
+      return;
     }
 
-    // check if customer owns stock
+    // check if customer has sufficient funds
+    if (payment - this->checkingAccount->getBalance() > 0.000001) {
+      addLog(historyLogs,
+             "Failed to buy stock " + code + ": insufficient funds");
+      return;
+    }
+
+    // check if customer already owns the same stock
     if (ownedStocks.find(code) == ownedStocks.end()) {
       this->ownedStocks[code] = {stocks[code].company, stocks[code].code,
                                  payment / stocks[code].price};
-
-      return 1;
     } else {
-
       this->ownedStocks[code].amount += payment / stocks[code].price;
-      return 1;
     }
 
-    return 0;
+    addLog(historyLogs, "Buying " + to_string(this->ownedStocks[code].amount) +
+                            " ($" + to_string(payment) + ") of " + code +
+                            " stock");
+    this->checkingAccount->deduct(payment);
   }
 
   void logStocks() {
@@ -340,7 +358,8 @@ public:
 
   void createInvestmentAccount() {
     addLog(historyLogs, "Creating Investment Account");
-    this->investmentAccout = new InvestmentAccount(historyLogs);
+    this->investmentAccout =
+        new InvestmentAccount(name + "\'s investment", historyLogs);
   }
 
   void createDepositAccount() {
@@ -354,6 +373,7 @@ public:
     this->createDepositAccount();
   }
 
+  InvestmentAccount *getInvestmentAccount() { return this->investmentAccout; }
   DepositAccount *getDepositAccount() { return this->depositAccount; }
 
   void checkingWithdraw(double amount) {
@@ -377,31 +397,6 @@ public:
     checkingAccount->withdraw(amount);
   }
 
-  void buyStock(string code, double payment) {
-    CheckingAccount *checkingAccount =
-        this->depositAccount->getCheckingAccount();
-
-    // Checking like this to avoid floating point arithmetic inaccuracies
-    if (payment - checkingAccount->getBalance() > 0.000001) {
-      cout << payment << " | " << payment - checkingAccount->getBalance()
-           << endl;
-      addLog(historyLogs, "Failed to buy stock " + code +
-                              ": insufficient funds on checking account");
-
-      return;
-    }
-
-    if (this->investmentAccout->buyStock(code, payment)) {
-      addLog(historyLogs,
-             "Buying " + code + " stock for $" + to_string(payment));
-      checkingAccount->deduct(payment);
-      return;
-    }
-
-    addLog(historyLogs,
-           "Failed to buy stock " + code + ": invalid stock specified");
-  }
-
   ~Customer() { delete investmentAccout; }
 };
 
@@ -412,6 +407,70 @@ void logCustomers(vector<Customer> &customers) {
     customers[i].logBasicData();
   }
   cout << endl;
+}
+
+void useJointAccount(Customer &customer) {
+
+  // create joint account
+  customer.createJointAccount();
+
+  // getting the deposit account of this customer
+  DepositAccount *depositAccount = customer.getDepositAccount();
+
+  // creating one checking, one savings and two CD accounts for the customer
+  depositAccount->createCheckingAccount();
+  depositAccount->createSavingsAccount();
+
+  depositAccount->createCDAccount();
+  depositAccount->createCDAccount();
+
+  // getting all deposit accounts
+  CheckingAccount *checkingAccount = depositAccount->getCheckingAccount();
+  SavingsAccount *savingsAccount = depositAccount->getSavingsAccount();
+  vector<CDAccount *> cdAccounts = depositAccount->getCDAccounts();
+
+  // using checking account
+  checkingAccount->deposit(1000);
+  checkingAccount->withdraw(220);
+  checkingAccount->withdraw(900);
+
+  // using savings account
+  savingsAccount->deposit(1041);
+  savingsAccount->setInterest(0.01);
+  savingsAccount->addInterest();
+  savingsAccount->withdraw(280);
+
+  // using the first cd account
+  cdAccounts[0]->deposit(20000);
+  cdAccounts[0]->setInterest(0.15);
+  cdAccounts[0]->blockBalance();
+  cdAccounts[0]->addInterest();
+  cdAccounts[0]->withdraw(100);
+
+  // using the second cd account
+  cdAccounts[1]->deposit(10000);
+  cdAccounts[1]->setInterest(0.20);
+  cdAccounts[1]->blockBalance();
+  cdAccounts[1]->addInterest();
+  cdAccounts[1]->deposit(1000);
+  cdAccounts[1]->withdraw(150);
+
+  // getting the joint customer investing account
+  InvestmentAccount *investmentAccount = customer.getInvestmentAccount();
+
+  // creating checking account and adding some funds to it
+  investmentAccount->createCheckingAccount();
+
+  CheckingAccount *investmentCheckingAccount =
+      investmentAccount->getCheckingAccount();
+
+  investmentCheckingAccount->deposit(1000);
+
+  // using the joint customer investing account
+  investmentAccount->buyStock("AMZN", 112.2);
+  investmentAccount->buyStock("AMZN", 313.2);
+  investmentAccount->buyStock("NFLX", 1000.16);
+  investmentAccount->buyStock("NVDA", 334.6);
 }
 
 int main() {
@@ -427,61 +486,7 @@ int main() {
   customers.push_back(
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
-  // creating a joint customer account
-  Customer &jointCustomer = customers[0];
-
-  jointCustomer.createJointAccount();
-
-  // getting the deposit account of this customer
-  DepositAccount *jointCustomerDepositAccount =
-      jointCustomer.getDepositAccount();
-
-  // creating one checking, one savings and two CD accounts for the customer
-  jointCustomerDepositAccount->createCheckingAccount();
-  jointCustomerDepositAccount->createSavingsAccount();
-
-  jointCustomerDepositAccount->createCDAccount();
-  jointCustomerDepositAccount->createCDAccount();
-
-  // getting all deposit accounts
-  CheckingAccount *jointCustomerCheckingAccount =
-      jointCustomerDepositAccount->getCheckingAccount();
-  SavingsAccount *jointCustomerSavingsAccount =
-      jointCustomerDepositAccount->getSavingsAccount();
-  vector<CDAccount *> jointCustomerCDAccounts =
-      jointCustomerDepositAccount->getCDAccounts();
-
-  // using checking account
-  jointCustomerCheckingAccount->deposit(1000);
-  jointCustomerCheckingAccount->withdraw(220);
-  jointCustomerCheckingAccount->withdraw(900);
-
-  // using savings account
-  jointCustomerSavingsAccount->deposit(1041);
-  jointCustomerSavingsAccount->setInterest(0.01);
-  jointCustomerSavingsAccount->addInterest();
-  jointCustomerSavingsAccount->withdraw(280);
-
-  // using the first cd account
-  jointCustomerCDAccounts[0]->deposit(20000);
-  jointCustomerCDAccounts[0]->setInterest(0.15);
-  jointCustomerCDAccounts[0]->blockBalance();
-  jointCustomerCDAccounts[0]->addInterest();
-  jointCustomerCDAccounts[0]->withdraw(100);
-
-  // using the second cd account
-  jointCustomerCDAccounts[1]->deposit(10000);
-  jointCustomerCDAccounts[1]->setInterest(0.20);
-  jointCustomerCDAccounts[1]->blockBalance();
-  jointCustomerCDAccounts[1]->addInterest();
-  jointCustomerCDAccounts[1]->deposit(1000);
-  jointCustomerCDAccounts[1]->withdraw(150);
-
-  //
-  jointCustomer.buyStock("AMZN", 112.2);
-  jointCustomer.buyStock("AMZN", 313.2);
-  jointCustomer.buyStock("NFLX", 1000.16);
-  jointCustomer.buyStock("NVDA", 334.6);
+  useJointAccount(customers[0]);
 
   // log every important piece of info
   logStocks(stocks);
