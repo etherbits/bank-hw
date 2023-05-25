@@ -41,6 +41,10 @@ string getFormattedDate(tm date) {
          to_string(date.tm_year + 1900);
 }
 
+void addLog(vector<string> &historyLogs, string log) {
+  historyLogs.push_back(to_string(historyLogs.size()) + ": " + log);
+}
+
 struct Stock {
   string company;
   string code;
@@ -74,24 +78,48 @@ void logStocks(map<string, StockListing> stocks) {
 
 class CheckingAccount {
 protected:
+  string name;
+  vector<string> &historyLogs;
   double balance;
 
 public:
-  CheckingAccount() : balance(0) {}
+  CheckingAccount(string name, vector<string> &historyLogs)
+      : name(name), historyLogs(historyLogs), balance(0) {}
 
-  void deposit(double amount) { balance += amount; }
+  void deposit(double amount) {
+    addLog(historyLogs, "Adding $" + to_string(amount) + " to " + name);
+    balance += amount;
+  }
 
   void withdraw(double amount) {
     if (amount - this->balance > 0.000001) {
-      cout << "ERROR: The withdrawal requested was larger than your current "
-              "balance!"
-           << endl;
-
+      addLog(historyLogs, "Failed to withdraw from " + name +
+                              ": "
+                              "withdrawal of $" +
+                              to_string(amount) + " requested but only $" +
+                              to_string(this->balance) + " available");
       return;
     }
 
     balance -= amount;
     balance = balance < 0 ? 0 : balance;
+    addLog(historyLogs, "Withdrawing $" + to_string(amount) + " from " + name);
+  }
+
+  void deduct(double amount) {
+
+    if (amount - this->balance > 0.000001) {
+      addLog(historyLogs, "Failed to deduct from " + name +
+                              ": "
+                              "deduction of $" +
+                              to_string(amount) + " requested but only $" +
+                              to_string(this->balance) + " available");
+      return;
+    }
+
+    balance -= amount;
+    balance = balance < 0 ? 0 : balance;
+    addLog(historyLogs, "Deducting $" + to_string(amount) + " from " + name);
   }
 
   double getBalance() { return this->balance; }
@@ -104,11 +132,23 @@ protected:
   double interest;
 
 public:
-  SavingsAccount() : interest(0) {}
+  SavingsAccount(string name, vector<string> &historyLogs)
+      : interest(0), CheckingAccount(name, historyLogs) {}
 
-  void setInterest(double interest) { this->interest = interest; }
+  void setInterest(double interest) {
+    addLog(historyLogs, "Setting " + name + " interest to " +
+                            to_string((int)(interest * 100)) + "%");
 
-  void addInterest() { this->balance *= 1 + this->interest; };
+    this->interest = interest;
+  }
+
+  void addInterest() {
+    addLog(historyLogs, "Adding interest to " + name + ": " +
+                            to_string(this->balance) + " => " +
+                            to_string(this->balance * (1 + this->interest)));
+
+    this->balance *= 1 + this->interest;
+  };
 
   void logData() {
     cout << "Balance: $" << this->getBalance()
@@ -120,7 +160,8 @@ class CDAccount : public SavingsAccount {
   bool isBlocked;
 
 public:
-  CDAccount() : isBlocked(false) {}
+  CDAccount(string name, vector<string> &historyLogs)
+      : isBlocked(false), SavingsAccount(name, historyLogs) {}
 
   void blockBalance() { isBlocked = true; }
 
@@ -143,13 +184,16 @@ public:
 };
 
 class DepositAccount {
-  string userId;
+  string name;
+  vector<string> &historyLogs;
   CheckingAccount *checkingAccount;
   SavingsAccount *savingsAccount;
   CDAccount *cdAccount;
 
 public:
-  DepositAccount(string userId) : userId(userId), checkingAccount(nullptr) {}
+  DepositAccount(string name, vector<string> &historyLogs)
+      : name(name), historyLogs(historyLogs), checkingAccount(nullptr),
+        savingsAccount(nullptr), cdAccount(nullptr) {}
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
   SavingsAccount *getSavingsAccount() { return this->savingsAccount; }
@@ -160,7 +204,9 @@ public:
       return;
     }
 
-    this->checkingAccount = new CheckingAccount();
+    addLog(historyLogs, "Creating Checking Account");
+    this->checkingAccount =
+        new CheckingAccount(name + "_checking", historyLogs);
   }
 
   void createSavingsAccount() {
@@ -168,10 +214,14 @@ public:
       return;
     }
 
-    this->savingsAccount = new SavingsAccount();
+    addLog(historyLogs, "Creating Savings Account");
+    this->savingsAccount = new SavingsAccount(name + "_savings", historyLogs);
   }
 
-  void createCDAccount() { this->cdAccount = new CDAccount(); }
+  void createCDAccount() {
+    addLog(historyLogs, "Creating CD Account");
+    this->cdAccount = new CDAccount(name + "_CD", historyLogs);
+  }
 
   void logData() {
     if (checkingAccount != nullptr) {
@@ -191,12 +241,12 @@ public:
   }
 };
 
-class InvestmentAccout {
-  string userId;
+class InvestmentAccount {
+  vector<string> &historyLogs;
   map<string, OwnedStock> ownedStocks;
 
 public:
-  InvestmentAccout(string userId) : userId(userId) {}
+  InvestmentAccount(vector<string> &historyLogs) : historyLogs(historyLogs) {}
 
   int buyStock(string code, double payment) {
     // check if stock exists
@@ -233,8 +283,6 @@ public:
     }
     cout << endl;
   }
-
-  void log() { cout << this->userId << endl; }
 };
 
 class User {
@@ -245,7 +293,7 @@ class User {
   tm birthday;
   vector<string> historyLogs;
   DepositAccount *depositAccount;
-  InvestmentAccout *investmentAccout;
+  InvestmentAccount *investmentAccout;
 
 public:
   User(string id, string name, bool isCitizen, Gender gender, tm birthday)
@@ -279,22 +327,39 @@ public:
     }
   }
 
-  void addLog(string log) {
-    this->historyLogs.push_back(to_string(this->historyLogs.size()) + ": " +
-                                log);
-  }
-
   void createInvestmentAccount() {
-    this->addLog("Creating Investment Account");
-    this->investmentAccout = new InvestmentAccout(this->id);
+    addLog(historyLogs, "Creating Investment Account");
+    this->investmentAccout = new InvestmentAccount(historyLogs);
   }
 
   void createDepositAccount() {
-    this->addLog("Creating Deposit Account");
-    this->depositAccount = new DepositAccount(this->id);
+    addLog(historyLogs, "Creating Deposit Account");
+    this->depositAccount =
+        new DepositAccount(name + "\'s deposit", historyLogs);
   }
 
   DepositAccount *getDepositAccount() { return this->depositAccount; }
+
+  void checkingWithdraw(double amount) {
+    if (this->depositAccount == nullptr) {
+      addLog(historyLogs,
+             "Failed to withdraw from your checking account: no deposit "
+             "account exists");
+      return;
+    }
+
+    CheckingAccount *checkingAccount =
+        this->depositAccount->getCheckingAccount();
+
+    if (checkingAccount == nullptr) {
+      addLog(historyLogs,
+             "Failed to withdraw from your checking account: no checking "
+             "account exists");
+      return;
+    }
+
+    checkingAccount->withdraw(amount);
+  }
 
   void buyStock(string code, double payment) {
     CheckingAccount *checkingAccount =
@@ -304,19 +369,21 @@ public:
     if (payment - checkingAccount->getBalance() > 0.000001) {
       cout << payment << " | " << payment - checkingAccount->getBalance()
            << endl;
-      this->addLog(
-          "Failed to buy stock: insufficient funds on checking account");
+      addLog(historyLogs, "Failed to buy stock " + code +
+                              ": insufficient funds on checking account");
 
       return;
     }
 
     if (this->investmentAccout->buyStock(code, payment)) {
-      this->addLog("Buying " + code + " stock for $" + to_string(payment));
-      checkingAccount->withdraw(payment);
+      addLog(historyLogs,
+             "Buying " + code + " stock for $" + to_string(payment));
+      checkingAccount->deduct(payment);
       return;
     }
 
-    this->addLog("Failed to buy stock: invalid stock specified");
+    addLog(historyLogs,
+           "Failed to buy stock " + code + ": invalid stock specified");
   }
 
   ~User() { delete investmentAccout; }
@@ -362,6 +429,7 @@ int main() {
 
   firstUserCheckingAccount->deposit(1000);
   firstUserCheckingAccount->withdraw(240);
+  firstUserCheckingAccount->withdraw(900);
 
   firstUserSavingsAccount->deposit(1041);
   firstUserSavingsAccount->setInterest(0.01);
