@@ -7,7 +7,7 @@
 
 using namespace std;
 
-// utility functions
+// utility functions, classes, structures and enums where created by Nika
 string padLeft(string str, char padChar, int len) {
   while (str.length() < len) {
     str.insert(0, 1, padChar);
@@ -23,6 +23,7 @@ string genderStr(Gender gender) {
   return gender == Gender::MALE ? "Male" : "Female";
 }
 
+// get the difference of two dates in years
 int getYearDiff(tm start) {
 
   time_t x = mktime(&start);
@@ -35,37 +36,39 @@ int getYearDiff(tm start) {
   return -1;
 }
 
+// for formating date
 string getFormattedDate(tm date) {
   return padLeft(to_string(date.tm_mday), '0', 2) + "/" +
          padLeft(to_string(date.tm_mon + 1), '0', 2) + "/" +
          to_string(date.tm_year + 1900);
 }
 
+// helper for user history logging
 void addLog(vector<string> &historyLogs, string log) {
   historyLogs.push_back(to_string(historyLogs.size()) + ": " + log);
 }
 
-struct Stock {
+// stocks and logic relating to stock where developed by Nika
+struct StockListing {
   string company;
   string code;
-};
-
-struct StockListing : public Stock {
   double price;
 };
 
-struct OwnedStock : public Stock {
+struct OwnedStock {
+  string company;
+  string code;
   double amount;
 };
 
 // stock listings
 map<string, StockListing> stocks = {
-    {"AMZN", {"Amazon.com Inc.", "AMZN", 114.8}},
+    {"AMZN", {"Amazon  Inc.", "AMZN", 114.8}},
     {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
     {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
 
 void logStocks(map<string, StockListing> stocks) {
-  cout << endl << "=== Available Stocks ===" << endl;
+  cout << endl << "=====   Available Stocks   =====" << endl;
 
   for (std::map<string, StockListing>::iterator it = stocks.begin();
        it != stocks.end(); ++it) {
@@ -76,6 +79,9 @@ void logStocks(map<string, StockListing> stocks) {
   cout << endl;
 }
 
+// Checking, Savings and CD accounts were created by Saba and Erekle with the
+// guidance of Nika Checking class acts as a base for savings and CD account
+// classes
 class CheckingAccount {
 protected:
   string name;
@@ -102,7 +108,8 @@ public:
     }
 
     balance -= amount;
-    balance = balance < 0 ? 0 : balance;
+    balance = balance < 0 ? 0 : balance; // set to 0 in the case of a floating
+                                         // point arithmetic error
     addLog(historyLogs, "Withdrawing $" + to_string(amount) + " from " + name);
   }
 
@@ -152,7 +159,7 @@ public:
 
   void logData() {
     cout << "Balance: $" << this->getBalance()
-         << " || Interest: " << this->interest << "%" << endl;
+         << " || Interest: " << (int)(this->interest * 100) << "%" << endl;
   }
 };
 
@@ -180,17 +187,19 @@ public:
       return;
     }
 
-    SavingsAccount::withdraw(amount);
+    SavingsAccount::withdraw(amount); // call to the base withdraw method
   }
 
   void logData() {
-    cout << "--- CD Account " + name << endl
+    cout << endl
+         << "- " + name + " -" << endl
          << " Balance: $" << this->getBalance()
-         << " || Interest: " << this->interest
+         << " || Interest: " << (int)(this->interest * 100)
          << "% || isBlocked: " << prettyBool(this->isBlocked) << endl;
   }
 };
 
+// The DepositAccount class was created by Erekle and Saba with the help of Nika
 class DepositAccount {
   string name;
   vector<string> &historyLogs;
@@ -232,26 +241,38 @@ public:
         name + "_CD_" + to_string(cdAccounts.size()), historyLogs));
   }
 
+  // log every account data that exists when this method was called
   void logData() {
     if (checkingAccount != nullptr) {
-      cout << "= Checking Account =" << endl;
+      cout << endl << "- Checking Account -" << endl;
       checkingAccount->logData();
     }
 
     if (savingsAccount != nullptr) {
-      cout << "= Savings Account =" << endl;
+      cout << endl << "- Savings Account -" << endl;
       savingsAccount->logData();
     }
 
     if (cdAccounts.size() > 0) {
-      cout << "= CD Accounts =" << endl;
+      cout << endl << "--- CD Accounts ---" << endl;
       for (int i = 0; i < cdAccounts.size(); i++) {
         cdAccounts[i]->logData();
       }
     }
   }
+
+  ~DepositAccount() {
+    delete checkingAccount;
+    delete savingsAccount;
+
+    for (int i = 0; i < cdAccounts.size(); i++) {
+      delete cdAccounts[i];
+    }
+    cdAccounts.clear();
+  }
 };
 
+// The InvestmentAccount class was developed by Nika
 class InvestmentAccount {
   string name;
   vector<string> &historyLogs;
@@ -292,15 +313,15 @@ public:
       this->ownedStocks[code].amount += payment / stocks[code].price;
     }
 
-    addLog(historyLogs, "Buying " + to_string(this->ownedStocks[code].amount) +
+    addLog(historyLogs, "Buying " + to_string(payment / stocks[code].price) +
                             " ($" + to_string(payment) + ") of " + code +
                             " stock");
     this->checkingAccount->deduct(payment);
   }
 
-  void logStocks() {
+  void logData() {
 
-    cout << endl << "=== Owned Stocks ===" << endl;
+    cout << endl << "- Owned Stocks -" << endl;
 
     for (std::map<string, OwnedStock>::iterator it = this->ownedStocks.begin();
          it != ownedStocks.end(); ++it) {
@@ -312,8 +333,11 @@ public:
     }
     cout << endl;
   }
+
+  ~InvestmentAccount() { delete checkingAccount; }
 };
 
+// The Customer class was created by Guga and Nika
 class Customer {
   string id;
   string name;
@@ -322,35 +346,39 @@ class Customer {
   tm birthday;
   vector<string> historyLogs;
   DepositAccount *depositAccount;
-  InvestmentAccount *investmentAccout;
+  InvestmentAccount *investmentAccount;
 
 public:
   Customer(string id, string name, bool isCitizen, Gender gender, tm birthday)
       : id(id), name(name), isCitizen(isCitizen), gender(gender),
         birthday(birthday), historyLogs({}), depositAccount(nullptr),
-        investmentAccout(nullptr) {}
+        investmentAccount(nullptr) {}
 
   int getAge() { return getYearDiff(this->birthday); }
 
   void logBasicData() {
-    cout << "id: " << this->id << endl;
-    cout << "name: " << this->name << endl;
-    cout << "age: " << this->getAge() << endl;
-    cout << "is a citizen: " << prettyBool(this->isCitizen) << endl;
-    cout << "gender: " << genderStr(this->gender) << endl;
-    cout << "birthday: " << getFormattedDate(this->birthday) << endl;
+    cout << endl
+         << "=== User: " + name + " ===" << endl
+         << endl
+         << "| Basic Data |" << endl;
+    cout << "- id: " << this->id << endl;
+    cout << "- name: " << this->name << endl;
+    cout << "- age: " << this->getAge() << endl;
+    cout << "- is a citizen: " << prettyBool(this->isCitizen) << endl;
+    cout << "- gender: " << genderStr(this->gender) << endl;
+    cout << "- birthday: " << getFormattedDate(this->birthday) << endl;
 
     if (this->depositAccount != nullptr) {
-      cout << endl << "= Deposit Account =" << endl;
+      cout << endl << "| Deposit Account Data |" << endl;
       this->depositAccount->logData();
     }
 
-    if (this->investmentAccout != nullptr) {
-      cout << endl << "= Investment Account =" << endl;
-      this->investmentAccout->logStocks();
+    if (this->investmentAccount != nullptr) {
+      cout << endl << "| Investment Account Data |" << endl;
+      this->investmentAccount->logData();
     }
 
-    cout << "== History Logs ==" << endl;
+    cout << endl << "| History Logs |" << endl;
     for (int i = 0; i < this->historyLogs.size(); i++) {
       cout << this->historyLogs[i] << endl;
     }
@@ -358,7 +386,7 @@ public:
 
   void createInvestmentAccount() {
     addLog(historyLogs, "Creating Investment Account");
-    this->investmentAccout =
+    this->investmentAccount =
         new InvestmentAccount(name + "\'s investment", historyLogs);
   }
 
@@ -373,42 +401,24 @@ public:
     this->createDepositAccount();
   }
 
-  InvestmentAccount *getInvestmentAccount() { return this->investmentAccout; }
+  InvestmentAccount *getInvestmentAccount() { return this->investmentAccount; }
   DepositAccount *getDepositAccount() { return this->depositAccount; }
 
-  void checkingWithdraw(double amount) {
-    if (this->depositAccount == nullptr) {
-      addLog(historyLogs,
-             "Failed to withdraw from your checking account: no deposit "
-             "account exists");
-      return;
-    }
-
-    CheckingAccount *checkingAccount =
-        this->depositAccount->getCheckingAccount();
-
-    if (checkingAccount == nullptr) {
-      addLog(historyLogs,
-             "Failed to withdraw from your checking account: no checking "
-             "account exists");
-      return;
-    }
-
-    checkingAccount->withdraw(amount);
+  ~Customer() {
+    delete investmentAccount;
+    delete depositAccount;
   }
-
-  ~Customer() { delete investmentAccout; }
 };
 
 void logCustomers(vector<Customer> &customers) {
-  cout << endl << "=== All Customers ===" << endl;
+  cout << endl << "=====   All Customers   =====" << endl;
   for (int i = 0; i < customers.size(); i++) {
-    cout << "---" << endl;
     customers[i].logBasicData();
   }
   cout << endl;
 }
 
+// use customer functions where developed by Beqa and Nika
 void useJointCustomer(Customer &customer) {
   // create joint account
   customer.createJointAccount();
@@ -474,14 +484,15 @@ void useJointCustomer(Customer &customer) {
 
 void useDepositCustomer(Customer &customer) {
   customer.createDepositAccount();
-  // write deposit customer code here...
+  // write deposit only customer code here...
 }
 
 void useInvestmentCustomer(Customer &customer) {
   customer.createInvestmentAccount();
-  // write investment customer code here...
+  // write investment only customer code here...
 }
 
+// main function created by Beqa with the help of Nika
 int main() {
   // adding customer accounts to a "mock database"
   vector<Customer> customers = {};
@@ -493,10 +504,10 @@ int main() {
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
   customers.push_back({"01010101012",
-                       "Jordan Smith",
+                       "Olivia Smith",
                        true,
-                       Gender::MALE,
-                       {0, 0, 0, 12, 10, 11}});
+                       Gender::FEMALE,
+                       {0, 0, 0, 12, 10, 83}});
 
   useJointCustomer(customers[0]); // creating and using the joint customer
   useDepositCustomer(
