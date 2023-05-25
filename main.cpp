@@ -409,8 +409,7 @@ void logCustomers(vector<Customer> &customers) {
   cout << endl;
 }
 
-void useJointAccount(Customer &customer) {
-
+void useJointCustomer(Customer &customer) {
   // create joint account
   customer.createJointAccount();
 
@@ -473,20 +472,37 @@ void useJointAccount(Customer &customer) {
   investmentAccount->buyStock("NVDA", 334.6);
 }
 
+void useDepositCustomer(Customer &customer) {
+  customer.createDepositAccount();
+  // write deposit customer code here...
+}
+
+void useInvestmentCustomer(Customer &customer) {
+  customer.createInvestmentAccount();
+  // write investment customer code here...
+}
+
 int main() {
   // adding customer accounts to a "mock database"
   vector<Customer> customers = {};
 
-  customers.push_back({"01010101010",
-                       "Nika Qvrivishvili",
-                       true,
-                       Gender::MALE,
-                       {0, 0, 0, 26, 2, 104}});
+  customers.push_back(
+      {"01010101010", "Mike Smith", true, Gender::MALE, {0, 0, 0, 26, 2, 104}});
 
   customers.push_back(
       {"01010101011", "John Doe", true, Gender::MALE, {0, 0, 0, 22, 3, 99}});
 
-  useJointAccount(customers[0]);
+  customers.push_back({"01010101012",
+                       "Jordan Smith",
+                       true,
+                       Gender::MALE,
+                       {0, 0, 0, 12, 10, 11}});
+
+  useJointCustomer(customers[0]); // creating and using the joint customer
+  useDepositCustomer(
+      customers[1]); // creating and using the deposit only customer
+  useInvestmentCustomer(
+      customers[2]); // creating and using the investment only customer
 
   // log every important piece of info
   logStocks(stocks);
