@@ -82,7 +82,7 @@ public:
   void deposit(double amount) { balance += amount; }
 
   void withdraw(double amount) {
-    if (amount - this->balance > 0.000001) {
+    if (amount > this->balance) {
       cout << "ERROR: The withdrawal requested was larger than your current "
               "balance!"
            << endl;
@@ -91,7 +91,6 @@ public:
     }
 
     balance -= amount;
-    balance = balance < 0 ? 0 : balance;
   }
 
   double getBalance() { return this->balance; }
@@ -210,12 +209,9 @@ public:
                                  payment / stocks[code].price};
 
       return 1;
-    } else {
-
-      this->ownedStocks[code].amount += payment / stocks[code].price;
-      return 1;
     }
 
+    this->ownedStocks[code].amount += payment / stocks[code].price;
     return 0;
   }
 
@@ -300,10 +296,7 @@ public:
     CheckingAccount *checkingAccount =
         this->depositAccount->getCheckingAccount();
 
-    // Checking like this to avoid floating point arithmetic inaccuracies
-    if (payment - checkingAccount->getBalance() > 0.000001) {
-      cout << payment << " | " << payment - checkingAccount->getBalance()
-           << endl;
+    if (payment > checkingAccount->getBalance()) {
       this->addLog(
           "Failed to buy stock: insufficient funds on checking account");
 
@@ -376,8 +369,8 @@ int main() {
 
   firstUser.buyStock("AMZN", 112.2);
   firstUser.buyStock("AMZN", 313.2);
-  firstUser.buyStock("NFLX", 1000.16);
-  firstUser.buyStock("NVDA", 334.6);
+  firstUser.buyStock("NFLX", 2012.16);
+  firstUser.buyStock("NVDA", 647.16);
 
   logStocks(stocks);
   logUsers(users);
