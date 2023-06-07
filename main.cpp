@@ -1,4 +1,5 @@
 #include <ctime>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <math.h>
@@ -61,11 +62,21 @@ struct OwnedStock {
   double amount;
 };
 
+struct BondListing {
+  string name;
+  double price;
+};
+
+struct OwnedBond {
+  string name;
+  int term;
+  double value;
+};
+
 // stock listings
-map<string, StockListing> stocks = {
-    {"AMZN", {"Amazon  Inc.", "AMZN", 114.8}},
-    {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
-    {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
+map<string, StockListing> stocks = {{"AMZN", {"Amazon  Inc.", "AMZN", 114.8}},
+                                    {"NFLX", {"Netflix Inc.", "NFLX", 367.4}},
+                                    {"NVDA", {"Nvidia Corp.", "NVDA", 313.2}}};
 
 void logStocks(map<string, StockListing> stocks) {
   cout << endl << "=====   Available Stocks   =====" << endl;
@@ -79,18 +90,50 @@ void logStocks(map<string, StockListing> stocks) {
   cout << endl;
 }
 
+map<string, BondListing> bonds = {
+    {"U.S. Treasury Bond", {"U.S. Treasury Bond", 1035.50}},
+    {"Intermediate Government/Credit Bond",
+     {"Intermediate Government/Credit Bond", 1325.50}},
+};
+
+void logBonds(map<string, BondListing> bonds) {
+  cout << endl << "=====   Available Bonds   =====" << endl;
+
+  for (std::map<string, BondListing>::iterator it = bonds.begin();
+       it != bonds.end(); ++it) {
+    cout << "Name: " << it->second.name << " || "
+         << "Price: $" << it->second.price << endl;
+  }
+  cout << endl;
+}
+
 // Checking, Savings and CD accounts were created by Saba and Erekle with the
 // guidance of Nika Checking class acts as a base for savings and CD account
 // classes
-class CheckingAccount {
+
+class Account {
 protected:
   string name;
-  vector<string> &historyLogs;
   double balance;
+  bool FDIC_Ins;
+  vector<string> &historyLogs;
 
 public:
-  CheckingAccount(string name, vector<string> &historyLogs)
-      : name(name), historyLogs(historyLogs), balance(0) {}
+  Account(string name, bool FDIC_Ins, vector<string> &historyLogs)
+      : name(name), FDIC_Ins(FDIC_Ins), historyLogs(historyLogs), balance(0) {}
+
+  void showBalance() {
+    cout << this->name << " balance: $" << this->balance << endl;
+  }
+
+  double getBalance() { return this->balance; }
+};
+
+class CheckingAccount : public Account {
+protected:
+public:
+  CheckingAccount(string name, bool FDIC_Ins, vector<string> &historyLogs)
+      : Account(name, FDIC_Ins, historyLogs) {}
 
   void deposit(double amount) {
     addLog(historyLogs, "Adding $" + to_string(amount) + " to " + name);
@@ -113,7 +156,7 @@ public:
     addLog(historyLogs, "Withdrawing $" + to_string(amount) + " from " + name);
   }
 
-  void deduct(double amount) {
+  int deduct(double amount) {
 
     if (amount - this->balance > 0.000001) {
       addLog(historyLogs, "Failed to deduct from " + name +
@@ -121,26 +164,30 @@ public:
                               "deduction of $" +
                               to_string(amount) + " requested but only $" +
                               to_string(this->balance) + " available");
-      return;
+      return -1;
     }
 
     balance -= amount;
     balance = balance < 0 ? 0 : balance;
     addLog(historyLogs, "Deducting $" + to_string(amount) + " from " + name);
+    return this->balance;
   }
 
-  double getBalance() { return this->balance; }
+  string getName() { return this->name; }
 
   void logData() { cout << "Balance: $" << this->balance << endl; }
+  void writeStatement(ofstream &file) {
+    file << "Balance: $" << this->balance << endl;
+  }
 };
 
-class SavingsAccount : public CheckingAccount {
+class SavingsAccount : public Account {
 protected:
   double interest;
 
 public:
-  SavingsAccount(string name, vector<string> &historyLogs)
-      : interest(0), CheckingAccount(name, historyLogs) {}
+  SavingsAccount(string name, bool FDIC_Ins, vector<string> &historyLogs)
+      : interest(0), Account(name, FDIC_Ins, historyLogs) {}
 
   void setInterest(double interest) {
     addLog(historyLogs, "Setting " + name + " interest to " +
@@ -157,8 +204,43 @@ public:
     this->balance *= 1 + this->interest;
   };
 
+  void transferToChecking(CheckingAccount *checkingAccount, double amount) {
+    if (amount - this->balance > 0.000001) {
+      addLog(historyLogs, "Failed to transfer from " + this->name +
+                              ": transfer of $" + to_string(amount) +
+                              " requested but only $" +
+                              to_string(this->balance) + " available");
+      return;
+    }
+
+    addLog(historyLogs, "Transfering $" + to_string(amount) + " from " +
+                            this->name + " to " + checkingAccount->getName());
+    this->balance -= amount;
+
+    checkingAccount->deposit(amount);
+  }
+
+  void transferFromChecking(CheckingAccount *checkingAccount, double amount) {
+    if (checkingAccount->deduct(amount) == -1) {
+      addLog(historyLogs, "Failed to transfer $" + to_string(amount) +
+                              " from " + checkingAccount->getName() + " to " +
+                              this->name);
+      return;
+    }
+
+    addLog(historyLogs, "Transfering $" + to_string(amount) + " from " +
+                            checkingAccount->getName() + " to " + this->name);
+
+    this->balance += amount;
+  }
+
   void logData() {
     cout << "Balance: $" << this->getBalance()
+         << " || Interest: " << (int)(this->interest * 100) << "%" << endl;
+  }
+
+  void writeStatement(ofstream &file) {
+    file << "Balance: $" << this->getBalance()
          << " || Interest: " << (int)(this->interest * 100) << "%" << endl;
   }
 };
@@ -167,8 +249,8 @@ class CDAccount : public SavingsAccount {
   bool isBlocked;
 
 public:
-  CDAccount(string name, vector<string> &historyLogs)
-      : isBlocked(false), SavingsAccount(name, historyLogs) {}
+  CDAccount(string name, bool FDIC_Ins, vector<string> &historyLogs)
+      : isBlocked(false), SavingsAccount(name, FDIC_Ins, historyLogs) {}
 
   void blockBalance() {
     addLog(historyLogs, "Blocking " + name + " balance");
@@ -180,18 +262,25 @@ public:
     isBlocked = false;
   }
 
-  void withdraw(double amount) {
-    if (this->isBlocked) {
-      addLog(historyLogs, "Failed to withdraw from " + name +
-                              ": account balance is blocked");
+  void close(CheckingAccount *checkingAccount) {
+    if (isBlocked) {
+      addLog(historyLogs, "Can't close account because it is still blocked ");
+
       return;
     }
-
-    SavingsAccount::withdraw(amount); // call to the base withdraw method
+    transferToChecking(checkingAccount, this->balance);
   }
 
   void logData() {
     cout << endl
+         << "- " + name + " -" << endl
+         << " Balance: $" << this->getBalance()
+         << " || Interest: " << (int)(this->interest * 100)
+         << "% || isBlocked: " << prettyBool(this->isBlocked) << endl;
+  }
+
+  void writeStatement(ofstream &file) {
+    file << endl
          << "- " + name + " -" << endl
          << " Balance: $" << this->getBalance()
          << " || Interest: " << (int)(this->interest * 100)
@@ -223,7 +312,7 @@ public:
 
     addLog(historyLogs, "Creating Checking Account");
     this->checkingAccount =
-        new CheckingAccount(name + "_checking", historyLogs);
+        new CheckingAccount(name + "_checking", true, historyLogs);
   }
 
   void createSavingsAccount() {
@@ -232,13 +321,14 @@ public:
     }
 
     addLog(historyLogs, "Creating Savings Account");
-    this->savingsAccount = new SavingsAccount(name + "_savings", historyLogs);
+    this->savingsAccount =
+        new SavingsAccount(name + "_savings", true, historyLogs);
   }
 
   void createCDAccount() {
     addLog(historyLogs, "Creating CD Account");
     this->cdAccounts.push_back(new CDAccount(
-        name + "_CD_" + to_string(cdAccounts.size()), historyLogs));
+        name + "_CD_" + to_string(cdAccounts.size()), true, historyLogs));
   }
 
   // log every account data that exists when this method was called
@@ -261,6 +351,25 @@ public:
     }
   }
 
+  void writeStatement(ofstream &file) {
+    if (checkingAccount != nullptr) {
+      file << endl << "- Checking Account -" << endl;
+      checkingAccount->writeStatement(file);
+    }
+
+    if (savingsAccount != nullptr) {
+      file << endl << "- Savings Account -" << endl;
+      savingsAccount->writeStatement(file);
+    }
+
+    if (cdAccounts.size() > 0) {
+      file << endl << "--- CD Accounts ---" << endl;
+      for (int i = 0; i < cdAccounts.size(); i++) {
+        cdAccounts[i]->writeStatement(file);
+      }
+    }
+  }
+
   ~DepositAccount() {
     delete checkingAccount;
     delete savingsAccount;
@@ -278,15 +387,13 @@ class InvestmentAccount {
   vector<string> &historyLogs;
   CheckingAccount *checkingAccount;
   map<string, OwnedStock> ownedStocks;
+  map<string, OwnedBond> ownedBonds;
 
 public:
   InvestmentAccount(string name, vector<string> &historyLogs)
-      : name(name), historyLogs(historyLogs), checkingAccount(nullptr) {}
-
-  void createCheckingAccount() {
-    this->checkingAccount =
-        new CheckingAccount(name + "_checking", historyLogs);
-  }
+      : name(name), historyLogs(historyLogs),
+        checkingAccount(
+            new CheckingAccount(name + "_checking", true, historyLogs)) {}
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
 
@@ -319,7 +426,68 @@ public:
     this->checkingAccount->deduct(payment);
   }
 
+  void sellStock(string code, double amount) {
+    if (ownedStocks.find(code) == ownedStocks.end()) {
+      addLog(historyLogs, "This account does not have any " + code);
+      return;
+    }
+
+    if (amount - ownedStocks[code].amount > 0.000001) {
+      addLog(historyLogs, "This account does not have " + to_string(amount) +
+                              " " + code + " shares to sell");
+      return;
+    }
+
+    addLog(historyLogs, "Selling " + to_string(amount) + " " + code + " for $" +
+                            to_string(stocks[code].price * amount));
+    this->ownedStocks[code].amount -= amount;
+    this->checkingAccount->deposit(amount * stocks[code].price);
+  }
+
+  void buyBond(string name, int term, double payment) {
+    // check if bond exists
+    if (bonds.find(name) == bonds.end()) {
+      addLog(historyLogs,
+             "Failed to buy bond " + name + ": invalid bond specified");
+      return;
+    }
+
+    // check if customer has sufficient funds
+    if (payment - this->checkingAccount->getBalance() > 0.000001) {
+      addLog(historyLogs,
+             "Failed to buy bond " + name + ": insufficient funds");
+      return;
+    }
+
+    // check if customer already owns the same bond
+    if (ownedBonds.find(name) == ownedBonds.end()) {
+      this->ownedBonds[name] = {bonds[name].name, term, payment * .9};
+    } else {
+      this->ownedBonds[name].value += payment * .9;
+    }
+
+    addLog(historyLogs, "Buying " + to_string(payment) + " worth of " + name +
+                            " bond for " + to_string(term) + " years");
+
+    this->checkingAccount->deduct(payment);
+  }
+
+  void sellBond(string name) {
+    if (ownedBonds.find(name) == ownedBonds.end()) {
+      addLog(historyLogs, "This account does not have any " + name + " bond");
+      return;
+    }
+
+    OwnedBond bond = ownedBonds[name];
+
+    addLog(historyLogs, "Selling " + name + " for $" + to_string(bond.value));
+    this->checkingAccount->deposit(ownedBonds[name].value);
+    this->ownedBonds.erase(name);
+  }
+
   void logData() {
+
+    cout << "Balance: $" << this->checkingAccount->getBalance() << endl;
 
     cout << endl << "- Owned Stocks -" << endl;
 
@@ -331,7 +499,43 @@ public:
            << "Total: "
            << "$" << it->second.amount * stocks[it->second.code].price << endl;
     }
+
+    cout << endl << "- Owned Bonds -" << endl;
+
+    for (std::map<string, OwnedBond>::iterator it = this->ownedBonds.begin();
+         it != ownedBonds.end(); ++it) {
+      cout << "Name: " << it->second.name << " || "
+           << "Term: " << it->second.term << " years || "
+           << "Value: $" << it->second.value << endl;
+    }
+
     cout << endl;
+  }
+
+  void writeStatement(ofstream &file) {
+    file << "Balance: $" << this->checkingAccount->getBalance() << endl;
+
+    file << endl << "- Owned Stocks -" << endl;
+
+    for (std::map<string, OwnedStock>::iterator it = this->ownedStocks.begin();
+         it != ownedStocks.end(); ++it) {
+      file << "Company: " << it->second.company << " || "
+           << "Code: " << it->second.code << " || "
+           << "Shares: " << it->second.amount << " || "
+           << "Total: "
+           << "$" << it->second.amount * stocks[it->second.code].price << endl;
+    }
+
+    file << endl << "- Owned Bonds -" << endl;
+
+    for (std::map<string, OwnedBond>::iterator it = this->ownedBonds.begin();
+         it != ownedBonds.end(); ++it) {
+      file << "Name: " << it->second.name << " || "
+           << "Term: " << it->second.term << " || "
+           << "Value: " << it->second.value << " || " << endl;
+    }
+
+    file << endl;
   }
 
   ~InvestmentAccount() { delete checkingAccount; }
@@ -401,6 +605,35 @@ public:
     this->createDepositAccount();
   }
 
+  void createBalanceStatement(ofstream &file) {
+
+    file << endl
+         << "=== User: " + name + " ===" << endl
+         << endl
+         << "| Basic Data |" << endl;
+    file << "- id: " << this->id << endl;
+    file << "- name: " << this->name << endl;
+    file << "- age: " << this->getAge() << endl;
+    file << "- is a citizen: " << prettyBool(this->isCitizen) << endl;
+    file << "- gender: " << genderStr(this->gender) << endl;
+    file << "- birthday: " << getFormattedDate(this->birthday) << endl;
+
+    if (this->depositAccount != nullptr) {
+      file << endl << "| Deposit Account Data |" << endl;
+      this->depositAccount->writeStatement(file);
+    }
+
+    if (this->investmentAccount != nullptr) {
+      file << endl << "| Investment Account Data |" << endl;
+      this->investmentAccount->writeStatement(file);
+    }
+
+    file << endl << "| History Logs |" << endl;
+    for (int i = 0; i < this->historyLogs.size(); i++) {
+      file << this->historyLogs[i] << endl;
+    }
+  }
+
   InvestmentAccount *getInvestmentAccount() { return this->investmentAccount; }
   DepositAccount *getDepositAccount() { return this->depositAccount; }
 
@@ -416,6 +649,16 @@ void logCustomers(vector<Customer> &customers) {
     customers[i].logBasicData();
   }
   cout << endl;
+}
+
+void generateBankStatement(vector<Customer> &customers) {
+  ofstream file("BankStatement.txt");
+
+  for (int i = 0; i < customers.size(); i++) {
+    customers[i].createBalanceStatement(file);
+  }
+
+  file.close();
 }
 
 // use customer functions where developed by Beqa and Nika
@@ -444,52 +687,106 @@ void useJointCustomer(Customer &customer) {
   checkingAccount->withdraw(900);
 
   // using savings account
-  savingsAccount->deposit(1041);
+  savingsAccount->transferFromChecking(checkingAccount, 300);
   savingsAccount->setInterest(0.01);
   savingsAccount->addInterest();
-  savingsAccount->withdraw(280);
+  savingsAccount->transferToChecking(checkingAccount, 280);
 
   // using the first cd account
-  cdAccounts[0]->deposit(20000);
+  cdAccounts[0]->transferFromChecking(checkingAccount, 600);
   cdAccounts[0]->setInterest(0.15);
   cdAccounts[0]->blockBalance();
   cdAccounts[0]->addInterest();
-  cdAccounts[0]->withdraw(100);
+  cdAccounts[0]->unblock();
+  cdAccounts[0]->close(checkingAccount);
 
   // using the second cd account
-  cdAccounts[1]->deposit(10000);
+  cdAccounts[1]->transferFromChecking(checkingAccount, 160);
   cdAccounts[1]->setInterest(0.20);
   cdAccounts[1]->blockBalance();
   cdAccounts[1]->addInterest();
-  cdAccounts[1]->deposit(1000);
-  cdAccounts[1]->withdraw(150);
+  cdAccounts[1]->close(checkingAccount);
 
   // getting the joint customer investing account
   InvestmentAccount *investmentAccount = customer.getInvestmentAccount();
 
-  // creating checking account and adding some funds to it
-  investmentAccount->createCheckingAccount();
-
   CheckingAccount *investmentCheckingAccount =
       investmentAccount->getCheckingAccount();
 
-  investmentCheckingAccount->deposit(1000);
+  investmentCheckingAccount->deposit(2000);
 
   // using the joint customer investing account
   investmentAccount->buyStock("AMZN", 112.2);
   investmentAccount->buyStock("AMZN", 313.2);
-  investmentAccount->buyStock("NFLX", 1000.16);
+  investmentAccount->buyStock("NFLX", 3000.16);
   investmentAccount->buyStock("NVDA", 334.6);
+  investmentAccount->sellStock("AMZN", 1);
+
+  investmentAccount->buyBond("U.S. Treasury Bond", 2, 600);
+  investmentAccount->buyBond("Intermediate Government/Credit Bond", 1, 340);
+  investmentAccount->sellBond("U.S. Treasury Bond");
 }
 
 void useDepositCustomer(Customer &customer) {
   customer.createDepositAccount();
-  // write deposit only customer code here...
+
+  // getting the deposit account of this customer
+  DepositAccount *depositAccount = customer.getDepositAccount();
+
+  // creating one checking, one savings and two CD accounts for the customer
+  depositAccount->createCheckingAccount();
+  depositAccount->createSavingsAccount();
+
+  depositAccount->createCDAccount();
+  depositAccount->createCDAccount();
+
+  // getting all deposit accounts
+  CheckingAccount *checkingAccount = depositAccount->getCheckingAccount();
+  SavingsAccount *savingsAccount = depositAccount->getSavingsAccount();
+  vector<CDAccount *> cdAccounts = depositAccount->getCDAccounts();
+
+  // using checking account
+  checkingAccount->deposit(3000);
+  checkingAccount->withdraw(410);
+  checkingAccount->withdraw(700);
+
+  // using savings account
+  savingsAccount->transferFromChecking(checkingAccount, 110);
+  savingsAccount->setInterest(0.01);
+  savingsAccount->addInterest();
+  savingsAccount->transferToChecking(checkingAccount, 50);
+
+  // using the first cd account
+  cdAccounts[0]->transferFromChecking(checkingAccount, 400);
+  cdAccounts[0]->setInterest(0.20);
+  cdAccounts[0]->blockBalance();
+  cdAccounts[0]->addInterest();
+  cdAccounts[0]->close(checkingAccount);
+
+  // using the second cd account
+  cdAccounts[1]->transferFromChecking(checkingAccount, 200);
+  cdAccounts[1]->setInterest(0.25);
+  cdAccounts[1]->blockBalance();
+  cdAccounts[1]->addInterest();
+  cdAccounts[1]->close(checkingAccount);
 }
 
 void useInvestmentCustomer(Customer &customer) {
   customer.createInvestmentAccount();
-  // write investment only customer code here...
+  // getting the customer investing account
+  InvestmentAccount *investmentAccount = customer.getInvestmentAccount();
+
+  CheckingAccount *investmentCheckingAccount =
+      investmentAccount->getCheckingAccount();
+
+  investmentCheckingAccount->deposit(3500);
+
+  // using the customer investing account
+  investmentAccount->buyStock("NFLX", 1200.16);
+  investmentAccount->buyStock("NVDA", 324.6);
+  investmentAccount->sellStock("NVDA", 0.5);
+
+  investmentAccount->buyBond("U.S. Treasury Bond", 4, 1337);
 }
 
 // main function created by Beqa with the help of Nika
@@ -517,7 +814,9 @@ int main() {
 
   // log every important piece of info
   logStocks(stocks);
+  logBonds(bonds);
   logCustomers(customers);
+  generateBankStatement(customers);
 
   return 0;
 }

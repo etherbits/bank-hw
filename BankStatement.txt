@@ -1,0 +1,171 @@
+
+=== User: Mike Smith ===
+
+| Basic Data |
+- id: 01010101010
+- name: Mike Smith
+- age: 19
+- is a citizen: true
+- gender: Male
+- birthday: 26/03/2004
+
+| Deposit Account Data |
+
+- Checking Account -
+Balance: $690
+
+- Savings Account -
+Balance: $23 || Interest: 1%
+
+--- CD Accounts ---
+
+- Mike Smith's deposit_CD_0 -
+ Balance: $0 || Interest: 15% || isBlocked: false
+
+- Mike Smith's deposit_CD_1 -
+ Balance: $192 || Interest: 20% || isBlocked: true
+
+| Investment Account Data |
+Balance: $954.8
+
+- Owned Stocks -
+Company: Amazon  Inc. || Code: AMZN || Shares: 2.70557 || Total: $310.6
+Company: Nvidia Corp. || Code: NVDA || Shares: 1.06833 || Total: $334.6
+
+- Owned Bonds -
+Name: Intermediate Government/Credit Bond || Term: 1 || Value: 306 || 
+
+
+| History Logs |
+0: Creating Investment Account
+1: Creating Deposit Account
+2: Creating Checking Account
+3: Creating Savings Account
+4: Creating CD Account
+5: Creating CD Account
+6: Adding $1000.000000 to Mike Smith's deposit_checking
+7: Withdrawing $220.000000 from Mike Smith's deposit_checking
+8: Failed to withdraw from Mike Smith's deposit_checking: withdrawal of $900.000000 requested but only $780.000000 available
+9: Deducting $300.000000 from Mike Smith's deposit_checking
+10: Transfering $300.000000 from Mike Smith's deposit_checking to Mike Smith's deposit_savings
+11: Setting Mike Smith's deposit_savings interest to 1%
+12: Adding interest to Mike Smith's deposit_savings: $300.000000 => $303.000000
+13: Transfering $280.000000 from Mike Smith's deposit_savings to Mike Smith's deposit_checking
+14: Adding $280.000000 to Mike Smith's deposit_checking
+15: Deducting $600.000000 from Mike Smith's deposit_checking
+16: Transfering $600.000000 from Mike Smith's deposit_checking to Mike Smith's deposit_CD_0
+17: Setting Mike Smith's deposit_CD_0 interest to 15%
+18: Blocking Mike Smith's deposit_CD_0 balance
+19: Adding interest to Mike Smith's deposit_CD_0: $600.000000 => $690.000000
+20: Blocking Mike Smith's deposit_CD_0 balance
+21: Transfering $690.000000 from Mike Smith's deposit_CD_0 to Mike Smith's deposit_checking
+22: Adding $690.000000 to Mike Smith's deposit_checking
+23: Deducting $160.000000 from Mike Smith's deposit_checking
+24: Transfering $160.000000 from Mike Smith's deposit_checking to Mike Smith's deposit_CD_1
+25: Setting Mike Smith's deposit_CD_1 interest to 20%
+26: Blocking Mike Smith's deposit_CD_1 balance
+27: Adding interest to Mike Smith's deposit_CD_1: $160.000000 => $192.000000
+28: Can't close account because it is still blocked 
+29: Adding $2000.000000 to Mike Smith's investment_checking
+30: Buying 0.977352 ($112.200000) of AMZN stock
+31: Deducting $112.200000 from Mike Smith's investment_checking
+32: Buying 2.728223 ($313.200000) of AMZN stock
+33: Deducting $313.200000 from Mike Smith's investment_checking
+34: Failed to buy stock NFLX: insufficient funds
+35: Buying 1.068327 ($334.600000) of NVDA stock
+36: Deducting $334.600000 from Mike Smith's investment_checking
+37: Selling 1.000000 AMZN for $114.800000
+38: Adding $114.800000 to Mike Smith's investment_checking
+39: Buying 600.000000 worth of U.S. Treasury Bond bond for 2 years
+40: Deducting $600.000000 from Mike Smith's investment_checking
+41: Buying 340.000000 worth of Intermediate Government/Credit Bond bond for 1 years
+42: Deducting $340.000000 from Mike Smith's investment_checking
+43: Selling U.S. Treasury Bond for $540.000000
+44: Adding $540.000000 to Mike Smith's investment_checking
+
+=== User: John Doe ===
+
+| Basic Data |
+- id: 01010101011
+- name: John Doe
+- age: 24
+- is a citizen: true
+- gender: Male
+- birthday: 22/04/1999
+
+| Deposit Account Data |
+
+- Checking Account -
+Balance: $1230
+
+- Savings Account -
+Balance: $61.1 || Interest: 1%
+
+--- CD Accounts ---
+
+- John Doe's deposit_CD_0 -
+ Balance: $480 || Interest: 20% || isBlocked: true
+
+- John Doe's deposit_CD_1 -
+ Balance: $250 || Interest: 25% || isBlocked: true
+
+| History Logs |
+0: Creating Deposit Account
+1: Creating Checking Account
+2: Creating Savings Account
+3: Creating CD Account
+4: Creating CD Account
+5: Adding $3000.000000 to John Doe's deposit_checking
+6: Withdrawing $410.000000 from John Doe's deposit_checking
+7: Withdrawing $700.000000 from John Doe's deposit_checking
+8: Deducting $110.000000 from John Doe's deposit_checking
+9: Transfering $110.000000 from John Doe's deposit_checking to John Doe's deposit_savings
+10: Setting John Doe's deposit_savings interest to 1%
+11: Adding interest to John Doe's deposit_savings: $110.000000 => $111.100000
+12: Transfering $50.000000 from John Doe's deposit_savings to John Doe's deposit_checking
+13: Adding $50.000000 to John Doe's deposit_checking
+14: Deducting $400.000000 from John Doe's deposit_checking
+15: Transfering $400.000000 from John Doe's deposit_checking to John Doe's deposit_CD_0
+16: Setting John Doe's deposit_CD_0 interest to 20%
+17: Blocking John Doe's deposit_CD_0 balance
+18: Adding interest to John Doe's deposit_CD_0: $400.000000 => $480.000000
+19: Can't close account because it is still blocked 
+20: Deducting $200.000000 from John Doe's deposit_checking
+21: Transfering $200.000000 from John Doe's deposit_checking to John Doe's deposit_CD_1
+22: Setting John Doe's deposit_CD_1 interest to 25%
+23: Blocking John Doe's deposit_CD_1 balance
+24: Adding interest to John Doe's deposit_CD_1: $200.000000 => $250.000000
+25: Can't close account because it is still blocked 
+
+=== User: Olivia Smith ===
+
+| Basic Data |
+- id: 01010101012
+- name: Olivia Smith
+- age: 39
+- is a citizen: true
+- gender: Female
+- birthday: 12/11/1983
+
+| Investment Account Data |
+Balance: $794.84
+
+- Owned Stocks -
+Company: Netflix Inc. || Code: NFLX || Shares: 3.26663 || Total: $1200.16
+Company: Nvidia Corp. || Code: NVDA || Shares: 0.536398 || Total: $168
+
+- Owned Bonds -
+Name: U.S. Treasury Bond || Term: 4 || Value: 1203.3 || 
+
+
+| History Logs |
+0: Creating Investment Account
+1: Adding $3500.000000 to Olivia Smith's investment_checking
+2: Buying 3.266630 ($1200.160000) of NFLX stock
+3: Deducting $1200.160000 from Olivia Smith's investment_checking
+4: Buying 1.036398 ($324.600000) of NVDA stock
+5: Deducting $324.600000 from Olivia Smith's investment_checking
+6: Selling 0.500000 NVDA for $156.600000
+7: Adding $156.600000 to Olivia Smith's investment_checking
+8: Buying 1337.000000 worth of U.S. Treasury Bond bond for 4 years
+9: Deducting $1337.000000 from Olivia Smith's investment_checking
