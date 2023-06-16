@@ -331,6 +331,8 @@ public:
         name + "_CD_" + to_string(cdAccounts.size()), true, historyLogs));
   }
 
+  string getName() { return this->name; }
+
   // log every account data that exists when this method was called
   void logData() {
     if (checkingAccount != nullptr) {
@@ -396,6 +398,8 @@ public:
             new CheckingAccount(name + "_checking", true, historyLogs)) {}
 
   CheckingAccount *getCheckingAccount() { return this->checkingAccount; }
+
+  string getName() { return this->name; }
 
   void buyStock(string code, double payment) {
     // check if stock exists
@@ -558,7 +562,9 @@ public:
         birthday(birthday), historyLogs({}), depositAccount(nullptr),
         investmentAccount(nullptr) {}
 
+  string getName() { return this->name; }
   int getAge() { return getYearDiff(this->birthday); }
+  vector<string> &getHistoryLogs() { return this->historyLogs; }
 
   void logBasicData() {
     cout << endl
@@ -603,6 +609,21 @@ public:
   void createJointAccount() {
     this->createInvestmentAccount();
     this->createDepositAccount();
+  }
+
+  // function to merge deposit and investment accoutns into one customer account
+  void mergeCustomerAccounts(DepositAccount *depositAccount,
+                             InvestmentAccount *investmentAccount) {
+    if (this->depositAccount != nullptr || this->investmentAccount != nullptr) {
+      addLog(historyLogs, "Cannot merge accounts because one of them already "
+                          "exists for this customer");
+      return;
+    }
+
+    this->depositAccount = depositAccount;
+    this->investmentAccount = investmentAccount;
+    addLog(historyLogs, "Merging " + depositAccount->getName() + " and " +
+                            investmentAccount->getName());
   }
 
   void createBalanceStatement(ofstream &file) {
@@ -789,6 +810,70 @@ void useInvestmentCustomer(Customer &customer) {
   investmentAccount->buyBond("U.S. Treasury Bond", 4, 1337);
 }
 
+void useMergedCustomer(Customer &customer) {
+  vector<string> &historyLogs = customer.getHistoryLogs();
+
+  addLog(historyLogs, "Creating Deposit Account");
+  DepositAccount *depositAccount =
+      new DepositAccount(customer.getName() + "\'s investment", historyLogs);
+
+  // creating one checking, one savings and two CD accounts for the customer
+  depositAccount->createCheckingAccount();
+  depositAccount->createSavingsAccount();
+
+  depositAccount->createCDAccount();
+  depositAccount->createCDAccount();
+
+  // getting all deposit accounts
+  CheckingAccount *checkingAccount = depositAccount->getCheckingAccount();
+  SavingsAccount *savingsAccount = depositAccount->getSavingsAccount();
+  vector<CDAccount *> cdAccounts = depositAccount->getCDAccounts();
+
+  // using checking account
+  checkingAccount->deposit(3000);
+  checkingAccount->withdraw(410);
+  checkingAccount->withdraw(700);
+
+  // using savings account
+  savingsAccount->transferFromChecking(checkingAccount, 110);
+  savingsAccount->setInterest(0.01);
+  savingsAccount->addInterest();
+  savingsAccount->transferToChecking(checkingAccount, 50);
+
+  // using the first cd account
+  cdAccounts[0]->transferFromChecking(checkingAccount, 400);
+  cdAccounts[0]->setInterest(0.20);
+  cdAccounts[0]->blockBalance();
+  cdAccounts[0]->addInterest();
+  cdAccounts[0]->close(checkingAccount);
+
+  // using the second cd account
+  cdAccounts[1]->transferFromChecking(checkingAccount, 200);
+  cdAccounts[1]->setInterest(0.25);
+  cdAccounts[1]->blockBalance();
+  cdAccounts[1]->addInterest();
+  cdAccounts[1]->close(checkingAccount);
+
+  addLog(historyLogs, "Creating Investment Account");
+  InvestmentAccount *investmentAccount =
+      new InvestmentAccount(customer.getName() + "\'s deposit", historyLogs);
+
+  CheckingAccount *investmentCheckingAccount =
+      investmentAccount->getCheckingAccount();
+
+  investmentCheckingAccount->deposit(3500);
+
+  // using the customer investing account
+  investmentAccount->buyStock("NFLX", 1200.16);
+  investmentAccount->buyStock("NVDA", 324.6);
+  investmentAccount->sellStock("NVDA", 0.5);
+
+  investmentAccount->buyBond("U.S. Treasury Bond", 4, 1337);
+
+  customer.mergeCustomerAccounts(depositAccount, investmentAccount);
+  checkingAccount->withdraw(5); // withdrawing from the merged account
+}
+
 // main function created by Beqa with the help of Nika
 int main() {
   // adding customer accounts to a "mock database"
@@ -806,11 +891,19 @@ int main() {
                        Gender::FEMALE,
                        {0, 0, 0, 12, 10, 83}});
 
+  customers.push_back({"01010101013",
+                       "Mark Peterson",
+                       true,
+                       Gender::MALE,
+                       {0, 0, 0, 9, 6, 92}});
+
   useJointCustomer(customers[0]); // creating and using the joint customer
   useDepositCustomer(
       customers[1]); // creating and using the deposit only customer
   useInvestmentCustomer(
       customers[2]); // creating and using the investment only customer
+  useMergedCustomer(
+      customers[3]); // creating both accoutns using them and then mergin them
 
   // log every important piece of info
   logStocks(stocks);

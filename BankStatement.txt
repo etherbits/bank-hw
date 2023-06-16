@@ -169,3 +169,80 @@ Name: U.S. Treasury Bond || Term: 4 || Value: 1203.3 ||
 7: Adding $156.600000 to Olivia Smith's investment_checking
 8: Buying 1337.000000 worth of U.S. Treasury Bond bond for 4 years
 9: Deducting $1337.000000 from Olivia Smith's investment_checking
+
+=== User: Mark Peterson ===
+
+| Basic Data |
+- id: 01010101013
+- name: Mark Peterson
+- age: 30
+- is a citizen: true
+- gender: Male
+- birthday: 09/07/1992
+
+| Deposit Account Data |
+
+- Checking Account -
+Balance: $1225
+
+- Savings Account -
+Balance: $61.1 || Interest: 1%
+
+--- CD Accounts ---
+
+- Mark Peterson's investment_CD_0 -
+ Balance: $480 || Interest: 20% || isBlocked: true
+
+- Mark Peterson's investment_CD_1 -
+ Balance: $250 || Interest: 25% || isBlocked: true
+
+| Investment Account Data |
+Balance: $794.84
+
+- Owned Stocks -
+Company: Netflix Inc. || Code: NFLX || Shares: 3.26663 || Total: $1200.16
+Company: Nvidia Corp. || Code: NVDA || Shares: 0.536398 || Total: $168
+
+- Owned Bonds -
+Name: U.S. Treasury Bond || Term: 4 || Value: 1203.3 || 
+
+
+| History Logs |
+0: Creating Deposit Account
+1: Creating Checking Account
+2: Creating Savings Account
+3: Creating CD Account
+4: Creating CD Account
+5: Adding $3000.000000 to Mark Peterson's investment_checking
+6: Withdrawing $410.000000 from Mark Peterson's investment_checking
+7: Withdrawing $700.000000 from Mark Peterson's investment_checking
+8: Deducting $110.000000 from Mark Peterson's investment_checking
+9: Transfering $110.000000 from Mark Peterson's investment_checking to Mark Peterson's investment_savings
+10: Setting Mark Peterson's investment_savings interest to 1%
+11: Adding interest to Mark Peterson's investment_savings: $110.000000 => $111.100000
+12: Transfering $50.000000 from Mark Peterson's investment_savings to Mark Peterson's investment_checking
+13: Adding $50.000000 to Mark Peterson's investment_checking
+14: Deducting $400.000000 from Mark Peterson's investment_checking
+15: Transfering $400.000000 from Mark Peterson's investment_checking to Mark Peterson's investment_CD_0
+16: Setting Mark Peterson's investment_CD_0 interest to 20%
+17: Blocking Mark Peterson's investment_CD_0 balance
+18: Adding interest to Mark Peterson's investment_CD_0: $400.000000 => $480.000000
+19: Can't close account because it is still blocked 
+20: Deducting $200.000000 from Mark Peterson's investment_checking
+21: Transfering $200.000000 from Mark Peterson's investment_checking to Mark Peterson's investment_CD_1
+22: Setting Mark Peterson's investment_CD_1 interest to 25%
+23: Blocking Mark Peterson's investment_CD_1 balance
+24: Adding interest to Mark Peterson's investment_CD_1: $200.000000 => $250.000000
+25: Can't close account because it is still blocked 
+26: Creating Investment Account
+27: Adding $3500.000000 to Mark Peterson's deposit_checking
+28: Buying 3.266630 ($1200.160000) of NFLX stock
+29: Deducting $1200.160000 from Mark Peterson's deposit_checking
+30: Buying 1.036398 ($324.600000) of NVDA stock
+31: Deducting $324.600000 from Mark Peterson's deposit_checking
+32: Selling 0.500000 NVDA for $156.600000
+33: Adding $156.600000 to Mark Peterson's deposit_checking
+34: Buying 1337.000000 worth of U.S. Treasury Bond bond for 4 years
+35: Deducting $1337.000000 from Mark Peterson's deposit_checking
+36: Merging Mark Peterson's investment and Mark Peterson's deposit
+37: Withdrawing $5.000000 from Mark Peterson's investment_checking
